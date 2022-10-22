@@ -420,15 +420,32 @@ abstract class LiteStateController<T> {
     rebuild();
   }
 
-  bool getIsLoading(String loaderName) {
+  bool getIsLoading(String? loaderName) {
+    if (loaderName == null) {
+      return _isLoading;
+    }
     return _loaderFlags[loaderName] == true;
   }
 
   void setIsLoading(
-    String loaderName,
+    String? loaderName,
     bool value,
   ) {
-    _loaderFlags[loaderName] = value;
+    if (loaderName != null) {
+      _loaderFlags[loaderName] = value;
+    } else {
+      _isLoading = value;
+    }
+    rebuild();
+  }
+
+  /// just sets all loader flags to false
+  /// but doesn't actually stop any loaders
+  void stopAllLoadings() {
+    _isLoading = false;
+    for (var kv in _loaderFlags.entries) {
+      _loaderFlags[kv.key] = false;
+    }
     rebuild();
   }
 
