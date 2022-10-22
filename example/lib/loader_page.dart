@@ -7,7 +7,6 @@ import 'button.dart';
 class LoaderPage extends StatelessWidget {
   const LoaderPage({Key? key}) : super(key: key);
 
-
   @override
   Widget build(BuildContext context) {
     return LiteState<LoaderController>(

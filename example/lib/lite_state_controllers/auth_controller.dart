@@ -61,6 +61,7 @@ class AuthController extends LiteStateController<AuthController> {
     /// if you authorized before this will return auth data next time
     /// because it's store in a local storage
     _authData = getPersistentValue<AuthData>('authData');
+
     /// call rebuild() to make sure the state is updated
     rebuild();
   }
@@ -71,13 +72,15 @@ class AuthController extends LiteStateController<AuthController> {
 
   Future logout() async {
     startLoading();
+
     /// simulate a backend request by a small delay
     delay(500);
+
     /// Simply set persistent data to null to delete it
     await setPersistentValue<AuthData>('authData', null);
     _authData = null;
     stopLoading();
-  } 
+  }
 
   Future authorize() async {
     /// startLoading() / stopLoading() are 2

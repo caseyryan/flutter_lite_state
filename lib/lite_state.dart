@@ -128,7 +128,8 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController>
+    extends State<LiteState<T>> {
   Widget? _child;
 
   @override
@@ -211,7 +212,8 @@ class _EncodedValueWrapper {
   }
 }
 
-typedef JsonEncoder<TEncoder> = Map<String, dynamic> Function<TReviver>(TEncoder value);
+typedef JsonEncoder<TEncoder> = Map<String, dynamic> Function<TReviver>(
+    TEncoder value);
 typedef JsonReviver<TReviver> = TReviver Function(dynamic value);
 
 abstract class LiteStateController<T> {
@@ -350,7 +352,7 @@ abstract class LiteStateController<T> {
         value?.toString() ?? '{}',
         reviver: _reviveValue,
       );
-    // ignore: empty_catches
+      // ignore: empty_catches
     } catch (e) {}
     if (map != null) {
       if (map['type'] == '_EncodedValueWrapper') {

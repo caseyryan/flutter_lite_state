@@ -17,16 +17,14 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   void initState() {
     initControllersLazy({
-      AuthController:() => AuthController(),
-      LoaderController:() => LoaderController(),
+      AuthController: () => AuthController(),
+      LoaderController: () => LoaderController(),
     });
     super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -39,4 +37,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-
