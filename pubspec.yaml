@@ -1,7 +1,7 @@
 name: lite_state
 description: A simple state management machine for Flutter.
 version: 1.0.0
-homepage:
+homepage: https://github.com/caseyryan/flutter_lite_state
 
 environment:
   sdk: ">=2.17.3 <3.0.0"
@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.0.6
+  collection: ^1.15.0
 
 dev_dependencies:
   flutter_test:
