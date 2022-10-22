@@ -13,6 +13,7 @@ class LoaderPage extends StatelessWidget {
     return LiteState<LoaderController>(
       builder: (BuildContext c, LoaderController controller) {
         return Scaffold(
+          appBar: AppBar(),
           body: Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,

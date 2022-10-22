@@ -35,6 +35,7 @@ class TestPage extends StatelessWidget {
     return LiteState<AuthController>(
       builder: (BuildContext c, AuthController controller) {
         return Scaffold(
+          appBar: AppBar(),
           body: Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
