@@ -71,6 +71,8 @@ class _MyAppState extends State<MyApp> {
     /// used. Pay attention, I've used AuthController type as a key 
     /// in the instantiator Map. This is used internally to look for 
     /// a controller using generic constraints
+    /// In case you want to initialize all your controllers at once
+    /// just use initControllers() instead of initControllersLazy()
     initControllersLazy({
       AuthController:() => AuthController(),
       LoaderController:() => LoaderController(),
@@ -105,6 +107,9 @@ Widget build(BuildContext context) {
 ```
 
 ## Usage
+
+
+<img src="https://github.com/caseyryan/images/blob/master/lite_state/lite_state.gif?raw=true" width="240"/>
 
 ```dart
 
