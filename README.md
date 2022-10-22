@@ -1,3 +1,9 @@
+## Flutter Lite State
+
+<a href="https://pub.dev/packages/lite_state"><img src="https://img.shields.io/pub/v/lite_state?logo=dart" alt="pub.dev"></a>[![style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://pub.dev/packages/effective_dart) <a href="https://github.com/Solido/awesome-flutter">
+<img alt="Awesome Flutter" src="https://img.shields.io/badge/Awesome-Flutter-blue.svg?longCache=true&style=flat-square" />
+</a>
+
 The litest state machine ever. You don't need to depend on any heavy libraries 
 if you only need to control state of your widgets. 
 This state manager is for those who are tired of writing 
