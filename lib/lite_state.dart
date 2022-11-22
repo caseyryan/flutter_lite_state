@@ -287,6 +287,7 @@ abstract class LiteStateController<T> {
       _persistentData[key] = value;
     }
     await _updateLocalPrefs();
+    rebuild();
   }
 
   Future _updateLocalPrefs() async {
