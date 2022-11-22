@@ -103,4 +103,7 @@ class AuthController extends LiteStateController<AuthController> {
 
     stopLoading();
   }
+
+  @override
+  void reset() {}
 }

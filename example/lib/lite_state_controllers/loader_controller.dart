@@ -20,4 +20,7 @@ class LoaderController extends LiteStateController<LoaderController> {
     await delay(4000);
     setIsLoading('load3', false);
   }
+
+  @override
+  void reset() {}
 }

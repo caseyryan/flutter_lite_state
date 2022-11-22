@@ -12,6 +12,15 @@ typedef ControllerInitializer = LiteStateController Function();
 Map<String, ControllerInitializer> _lazyControllerInitializers = {};
 Map<String, LiteStateController> _controllers = {};
 
+/// just calls a reset() method on all initialized controllers
+/// what this method should / should not do is up to you. Just write
+/// your own implementation if you need it
+void resetAllControllers() {
+  for (var controller in _controllers.values) {
+    controller.reset();
+  }
+}
+
 void initControllersLazy(
   Map<Type, ControllerInitializer> controllerInitializers,
 ) {
@@ -226,6 +235,8 @@ abstract class LiteStateController<T> {
     }
     return _streamControllers[key];
   }
+
+  void reset();
 
   Stream<T> get _stream => _streamController.stream.asBroadcastStream();
 
