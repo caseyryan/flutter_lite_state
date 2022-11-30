@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +10,12 @@ typedef ControllerInitializer = LiteStateController Function();
 
 Map<String, ControllerInitializer> _lazyControllerInitializers = {};
 Map<String, LiteStateController> _controllers = {};
+
+abstract class LSJsonEncodable {
+  Map encode();
+}
+
+Map<String, Decoder> _jsonDecoders = {};
 
 /// just calls a reset() method on all initialized controllers
 /// what this method should / should not do is up to you. Just write
@@ -29,6 +34,48 @@ void initControllersLazy(
     if (!_controllers.containsKey(typeKey)) {
       _lazyControllerInitializers[typeKey] = kv.value;
     }
+  }
+}
+
+typedef Decoder = Object? Function(Map);
+
+/// Initializes JSON decoders
+/// for custom types
+/// (if you ever need to store anything custom in shared preferences),
+/// so they can be easily
+/// restored from SharedPreferences.
+/// Call this method someplace at the beginning of
+/// your app, just before you initialize LiteState controllers
+/// so that controllers can have access to this data before
+/// they are initialized themselves.
+/// [Decoder] MUST be a STATIC function
+/// that creates instances of custom classes
+/// from a map
+/// e.g.
+/// static AuthData decode(Map map) {
+///   return AuthData(
+///     type: map['type'],
+///     token: map['token'],
+///     userName: map['userName'],
+///   );
+/// }
+/// this function converts a Map, stored in SharedPreferences
+/// into a user defined object. In this case a custom class
+/// called AuthData
+///
+/// IMPORTANT! Bafore decoding enythig, you need to encode it first
+/// but to be able to be encoded to JSON
+/// your custom classes must implement LSJsonEncodable interface
+/// from LiteState package. See AuthData in an example project
+/// it simply makes sure that your class contains "encode()" method
+/// that will convert your instance to a Map
+void initJsonDecoders(Map<Type, Decoder> value) {
+  for (var v in value.entries) {
+    final key = v.key.toString();
+    if (key.contains('<')) {
+      throw 'Encodable type must not be generic';
+    }
+    _jsonDecoders[key] = v.value;
   }
 }
 
@@ -205,24 +252,27 @@ class _LiteStateState<T extends LiteStateController>
 
 class _EncodedValueWrapper {
   String typeName;
-  dynamic value;
+  Map value;
   _EncodedValueWrapper({
     required this.typeName,
     required this.value,
   });
 
   String _toEncodedJson() {
+    /// stores value as base64 string
+    /// even though it take more space it is also
+    /// a safer way to store some complex maps that may
+    /// fail to be stored as strings
+    final encodedData = base64Encode(
+      utf8.encode(jsonEncode(value)),
+    );
     return jsonEncode({
       'type': '_EncodedValueWrapper',
       'typeName': typeName,
-      'value': value,
+      'value': encodedData,
     });
   }
 }
-
-typedef JsonEncoder<TEncoder> = Map<String, dynamic> Function<TReviver>(
-    TEncoder value);
-typedef JsonReviver<TReviver> = TReviver Function(dynamic value);
 
 abstract class LiteStateController<T> {
   static final Map<String, dynamic> _streamControllers = {};
@@ -242,16 +292,9 @@ abstract class LiteStateController<T> {
 
   final Map<String, bool> _loaderFlags = {};
   SharedPreferences? _prefs;
-  late Map<dynamic, Function> _encoders;
-  late Map<dynamic, Function> _revivers;
   Map<String, dynamic> _persistentData = {};
 
-  LiteStateController({
-    Map<dynamic, Function>? revivers,
-    Map<dynamic, Function>? encoders,
-  }) {
-    _revivers = revivers ?? {};
-    _encoders = encoders ?? {};
+  LiteStateController() {
     _init();
   }
 
@@ -264,14 +307,6 @@ abstract class LiteStateController<T> {
       throw _getControllerExistsText(typeKey);
     }
     await _initLocalStorage();
-  }
-
-  void addJsonEncoder<TEncoder>(JsonEncoder<TEncoder> encoder) {
-    _encoders[TEncoder] = encoder;
-  }
-
-  void addJsonReviver<TEncoder>(JsonReviver reviver) {
-    _revivers[TEncoder] = reviver;
   }
 
   /// It's just a utility method in case you need to
@@ -323,33 +358,37 @@ abstract class LiteStateController<T> {
   String? _encodeValue(Object? nonEncodable) {
     dynamic value;
     if (nonEncodable is DateTime) {
-      value = nonEncodable.toIso8601String();
+      return nonEncodable.toIso8601String();
     } else if (nonEncodable is io.File) {
-      value = nonEncodable.path;
-    } else {
-      final encoder = _encoders.entries
-          .firstWhereOrNull(
-            (t) => t.key == nonEncodable.runtimeType,
-          )
-          ?.value;
-      if (encoder != null) {
-        final data = encoder.call(
-          nonEncodable,
-        );
-        if (data is Map) {
-          value = data.cast<String, dynamic>();
-        } else {
-          value = data;
-        }
-      } else {
-        throw 'Please add json encoder for ${nonEncodable.runtimeType}';
-      }
+      return nonEncodable.path;
+    }
+    final typeName = nonEncodable.runtimeType.toString();
+    if (typeName.contains('<')) {
+      throw 'Encodable type must not be generic';
+    }
+    if (_isPrimitiveType(typeName)) {
+      return value;
+    }
+    if (nonEncodable is! LSJsonEncodable) {
+      throw 'Your class must implement JsonEncodable before it can be converted to JSON';
     }
     final wrapper = _EncodedValueWrapper(
-      typeName: nonEncodable.runtimeType.toString(),
-      value: value,
+      typeName: typeName,
+      value: nonEncodable.encode(),
     );
     return wrapper._toEncodedJson();
+  }
+
+  bool _isPrimitiveType(String typeName) {
+    switch (typeName) {
+      case 'bool':
+      case 'int':
+      case 'double':
+      case 'num':
+      case 'String':
+        return true;
+    }
+    return false;
   }
 
   Object? _reviveValue(
@@ -368,18 +407,17 @@ abstract class LiteStateController<T> {
     if (map != null) {
       if (map['type'] == '_EncodedValueWrapper') {
         final typeName = map['typeName'];
-
-        final reviver = _revivers.entries.firstWhereOrNull(
-          (t) {
-            return t.key.toString() == typeName;
-          },
-        )?.value;
-        if (reviver == null) {
-          debugPrint(
-            'Please add json reviver for $typeName through your controller\'s constructor',
-          );
+        if (_jsonDecoders[typeName] != null) {
+          final Decoder decode = _jsonDecoders[typeName] as Decoder;
+          final String innerValue = map['value'];
+          final Map mapFromBase64 = jsonDecode(
+            utf8.decode(
+              base64Decode(innerValue),
+            ),
+          ) as Map;
+          return decode(mapFromBase64);
         } else {
-          value = reviver.call(map['value']);
+          throw 'No decoder found for $typeName. Use initJsonDecoders(...) to add it first';
         }
       }
     }

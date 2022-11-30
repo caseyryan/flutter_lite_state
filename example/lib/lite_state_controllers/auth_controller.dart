@@ -1,56 +1,31 @@
 import 'package:lite_state/lite_state.dart';
 
-/// AuthData class is here just to
-/// demonstrate how to write a reviver for local storage
-/// if you need to store typed data in it
-class AuthData {
-  String type;
-  String token;
-  String userName;
-  AuthData({
-    required this.type,
-    required this.token,
-    required this.userName,
-  });
+import 'auth_data.dart';
 
-  /// These two methods are for encoders / revivers
-  Map<String, dynamic> encode() {
-    return {
-      'type': type,
-      'token': token,
-      'userName': userName,
-    };
-  }
-
-  static AuthData decode(dynamic map) {
-    return AuthData(
-      type: map['type'],
-      token: map['token'],
-      userName: map['userName'],
-    );
-  }
-}
-
+/// just a shortcut that can be used to access your controller
+/// from any place in your app. You may not create it if you don't need it
+/// I just find it pretty convenient.
+/// As you can see it does not need any context to be accessed
 AuthController get authController {
   return findController<AuthController>();
 }
 
 class AuthController extends LiteStateController<AuthController> {
-  /// In case you want to store typed persistent data,
-  /// you need to provide encoders and revivers so that
-  /// json encoder could understand how to store your data
-  AuthController()
-      : super(
-          encoders: {
-            AuthData: <AuthData>(value) => value.encode(),
-          },
-          revivers: {AuthData: (value) => AuthData.decode(value)},
-        );
+  /// this will return AuthData only after
+  /// in has been initialized
+  AuthData? get authData {
+    return getPersistentValue<AuthData>('authData');
+  }
 
-  AuthData? _authData;
+  set authData(AuthData? value) {
+    /// you don't have to call rebuild() here
+    /// because setPersistentValue() will do it for you
+    /// under the hood
+    setPersistentValue<AuthData>('authData', value);
+  }
 
   String get userName {
-    return _authData != null ? _authData!.userName : 'Guest';
+    return authData?.userName ?? 'Guest';
   }
 
   /// This method is called internally when local storage
@@ -58,16 +33,12 @@ class AuthController extends LiteStateController<AuthController> {
   /// data like Bearer tokens or something like this
   @override
   void onLocalStorageInitialied() {
-    /// if you authorized before this will return auth data next time
-    /// because it's store in a local storage
-    _authData = getPersistentValue<AuthData>('authData');
-
-    /// call rebuild() to make sure the state is updated
-    rebuild();
+    /// this is the place where all your local data is
+    /// already initialized
   }
 
   bool get isAuthorized {
-    return _authData != null;
+    return authData != null;
   }
 
   Future logout() async {
@@ -77,8 +48,7 @@ class AuthController extends LiteStateController<AuthController> {
     delay(500);
 
     /// Simply set persistent data to null to delete it
-    await setPersistentValue<AuthData>('authData', null);
-    _authData = null;
+    authData = null;
     stopLoading();
   }
 
@@ -91,16 +61,11 @@ class AuthController extends LiteStateController<AuthController> {
 
     /// jsut to simulate a backend request
     await delay(1000);
-    _authData = AuthData(
+    authData = AuthData(
       type: 'Bearer',
       token: 'SomeToken',
       userName: 'Vasya',
     );
-    await setPersistentValue<AuthData>(
-      'authData',
-      _authData!,
-    );
-
     stopLoading();
   }
 

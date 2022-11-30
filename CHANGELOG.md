@@ -1,3 +1,7 @@
+## 2.0.0
+* Drammatically simplified and improved a work with JSON encoders and decoders 
+for local storage
+* Added more information to the docs
 ## 1.0.4
 * Added a global method resetAllControllers() which calls "reset()" method 
 * on all initialized controllers. It's an abstract method and must be overriden in all the controllers

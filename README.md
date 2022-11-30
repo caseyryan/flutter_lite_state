@@ -179,3 +179,98 @@ class TestPage extends StatelessWidget {
 }
 ```
 
+Controllers also allow you to easily store and restore 
+data from shared preferences. When the local data is restored
+a controller calls void onLocalStorageInitialied(); method.
+You can override it in your controllers to know the exact time 
+when your local data is ready.
+This example shows how you can store and restore auth tokens
+
+```dart
+/// First you need to create a class that you want to
+/// be storable / restorable. The class must implement 
+/// LSJsonEncodable interface. It's very simple and is needed 
+/// for a LiteState controller to determin if and instance of the 
+/// class can be serialized according to its rules. 
+/// The interface only contains one method: Map encode(); 
+/// which must be overriden in your class
+class AuthData implements LSJsonEncodable {
+  String type;
+  String token;
+  String userName;
+  AuthData({
+    required this.type,
+    required this.token,
+    required this.userName,
+  });
+
+  @override
+  Map encode() {
+    return {
+      'type': type,
+      'token': token,
+      'userName': userName,
+    };
+  }
+  /// The static method is necessary as a decoder 
+  /// so that a controller can understand how to work with your data
+  /// when it meet the data in SharedPreferences
+  /// You can see how it's used below
+  static AuthData decode(Map map) {
+    return AuthData(
+      type: map['type'],
+      token: map['token'],
+      userName: map['userName'],
+    );
+  }
+}
+
+```
+
+Now you need to initialize your decoders. The best place to do it is 
+right before you initialize your controllers. Somewhere in the beginning of your app
+
+
+```dart
+@override
+void initState() {
+  
+  /// Initialize decoders. In this case we only have AuthData decoder
+  /// but you will need to add decoders for every class you want to be encodable / decodable
+  initJsonDecoders({
+    AuthData: AuthData.decode,
+  });
+
+  initControllersLazy({
+    AuthController:() => AuthController(),
+    LoaderController:() => LoaderController(),
+  });
+  super.initState();
+}
+```
+
+That's basically it. Now you can simply use it in your controller. 
+
+```dart
+AuthController get authController {
+  return findController<AuthController>();
+}
+
+class AuthController extends LiteStateController<AuthController> {
+  
+  AuthData? get authData {
+    return getPersistentValue<AuthData>('authData');
+  }
+  set authData(AuthData? value) {
+    setPersistentValue<AuthData>('authData', null);
+  }
+
+  String get userName {
+    return authData?.userName ?? 'Guest';
+  }
+  ...
+}
+
+```
+
+See example project for a complete source 

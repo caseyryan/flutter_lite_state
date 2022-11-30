@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lite_state/lite_state.dart';
 
 import 'lite_state_controllers/auth_controller.dart';
+import 'lite_state_controllers/auth_data.dart';
 import 'lite_state_controllers/loader_controller.dart';
 import 'test_page.dart';
 
@@ -19,6 +20,10 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   void initState() {
+    initJsonDecoders({
+      AuthData: AuthData.decode,
+    });
+
     initControllersLazy({
       AuthController: () => AuthController(),
       LoaderController: () => LoaderController(),
