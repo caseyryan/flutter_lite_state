@@ -1,3 +1,5 @@
+## 2.0.1
+* Added disposeControllerByType() global method which allows to completely kill a controller
 ## 2.0.0
 * Drammatically simplified and improved a work with JSON encoders and decoders 
 for local storage

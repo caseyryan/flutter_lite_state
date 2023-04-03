@@ -37,6 +37,15 @@ void initControllersLazy(
   }
 }
 
+void disposeControllerByType(Type controllerType) {
+  final typeKey = controllerType.toString();
+  final controller = _controllers[typeKey];
+  if (controller != null) {
+    controller.reset();
+    _controllers.remove(typeKey);
+  }
+}
+
 typedef Decoder = Object? Function(Map);
 
 /// Initializes JSON decoders

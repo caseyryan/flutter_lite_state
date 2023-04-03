@@ -61,6 +61,12 @@ class TestPage extends StatelessWidget {
                     }
                   },
                 ),
+                // Button(
+                //   text: 'reset controller',
+                //   onPressed: () {
+                //     disposeControllerByType(AuthController);
+                //   },
+                // ),
                 _buildLoadersButton(context),
                 const Padding(
                   padding: EdgeInsets.only(
