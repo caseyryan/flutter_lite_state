@@ -426,7 +426,32 @@ abstract class LiteStateController<T> {
           ) as Map;
           return decode(mapFromBase64);
         } else {
-          throw 'No decoder found for $typeName. Use initJsonDecoders(...) to add it first';
+          if (kDebugMode) {
+            print(
+              '''
+              No decoder found for $typeName.
+                To make your class encodable / decodable it must implement LSJsonEncodable interface 
+                e.g. 
+                class UserData implements LSJsonEncodable {
+                  
+                  /// comes from the abstract subclass (interface) 
+                  Map encode() {
+                    /// implement your own method to 
+                    return toMap();
+                  }
+
+                  /// add a static function that returns an instance
+                  static UserData decode(Map data) {
+                    /// use your way to decode an instance from map
+                    /// in this case I used a factory constructor but it doesn't 
+                    /// really matter.
+                    return UserData.fromMap(data);
+                  }
+                }
+              ''',
+            );
+          }
+          return null;
         }
       }
     }

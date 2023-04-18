@@ -1,3 +1,5 @@
+## 2.0.2
+* Removed throw when it's impossible to decode a data and added a description instead
 ## 2.0.1
 * Added disposeControllerByType() global method which allows to completely kill a controller
 ## 2.0.0
