@@ -123,28 +123,28 @@ String _getNoControllerErrorText(String typeKey) {
         ''';
 }
 
-String _getControllerExistsText(String typeKey) {
-  return '''
-          The controller for $typeKey is already initialized.
-          Please use findController<T>() generic function 
-          to find a controller you need and do not initialize 
-          the controllers by calling their constructors directly
-          use special global functions instead. E.g.
-          initControllersLazy({
-            AppBarController: () => AppBarController(),
-            ThemeController: () => ThemeController(),
-          });
-          or 
-          initControllers({
-            AppBarController: () => AppBarController(),
-            ThemeController: () => ThemeController(),
-          });
-          if you need to initialized them all at ones. 
-          You can use both initControllersLazy() and initControllers()
-          together. Don't worry, a controller can still be initialized 
-          only once
-        ''';
-}
+// String _getControllerExistsText(String typeKey) {
+//   return '''
+//           The controller for $typeKey is already initialized.
+//           Please use findController<T>() generic function 
+//           to find a controller you need and do not initialize 
+//           the controllers by calling their constructors directly
+//           use special global functions instead. E.g.
+//           initControllersLazy({
+//             AppBarController: () => AppBarController(),
+//             ThemeController: () => ThemeController(),
+//           });
+//           or 
+//           initControllers({
+//             AppBarController: () => AppBarController(),
+//             ThemeController: () => ThemeController(),
+//           });
+//           if you need to initialized them all at ones. 
+//           You can use both initControllersLazy() and initControllers()
+//           together. Don't worry, a controller can still be initialized 
+//           only once
+//         ''';
+// }
 
 void _lazilyInitializeController(String typeKey) {
   if (_controllers.containsKey(typeKey)) {
@@ -156,6 +156,13 @@ void _lazilyInitializeController(String typeKey) {
   if (kDebugMode) {
     print('LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
   }
+}
+
+void _addTemporaryController<T>(
+  LiteStateController<T> controller,
+) {
+  final typeKey = T.toString();
+  _controllers[typeKey] = controller;
 }
 
 T fc<T extends LiteStateController>() {
@@ -175,6 +182,12 @@ T findController<T extends LiteStateController>() {
   }
 }
 
+bool _hasControllerInitializer<T extends LiteStateController>() {
+  final typeKey = T.toString();
+  return _controllers.containsKey(typeKey) ||
+      _lazyControllerInitializers.containsKey(typeKey);
+}
+
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
   BuildContext context,
   T controller,
@@ -182,10 +195,17 @@ typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
 
 class LiteState<T extends LiteStateController> extends StatefulWidget {
   final LiteStateBuilder<T> builder;
+  final LiteStateController<T>? controller;
 
+  /// [builder] a function that will be called every time
+  /// you call rebuild in your controller
+  /// [controller] if you don't need a persistent controller
+  /// pass a new instance of controller here and it will be disposed
+  /// as soon as your LiteState widget is disposed
   const LiteState({
-    Key? key,
     required this.builder,
+    this.controller,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -198,6 +218,13 @@ class _LiteStateState<T extends LiteStateController>
 
   @override
   void initState() {
+    if (widget.controller != null) {
+      if (_hasControllerInitializer<T>()) {
+        /// just to make sure the controller did not exist
+        disposeControllerByType(T);
+      }
+      _addTemporaryController(widget.controller!);
+    }
     super.initState();
   }
 
@@ -208,6 +235,9 @@ class _LiteStateState<T extends LiteStateController>
 
   @override
   void dispose() {
+    if (widget.controller != null) {
+      disposeControllerByType(T);
+    }
     super.dispose();
   }
 
@@ -228,6 +258,9 @@ class _LiteStateState<T extends LiteStateController>
   }
 
   LiteStateController<T>? get _controller {
+    if (widget.controller != null) {
+      return widget.controller!;
+    }
     final key = T.toString();
     return _controllers[key] as LiteStateController<T>?;
   }
@@ -313,7 +346,7 @@ abstract class LiteStateController<T> {
   Future _init() async {
     final typeKey = T.toString();
     if (_controllers.containsKey(typeKey)) {
-      throw _getControllerExistsText(typeKey);
+      disposeControllerByType(T);
     }
     await _initLocalStorage();
   }

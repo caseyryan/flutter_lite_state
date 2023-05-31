@@ -15,7 +15,7 @@ class Button extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 160.0,
+      width: 280.0,
       child: MaterialButton(
         color: Colors.black,
         onPressed: onPressed,

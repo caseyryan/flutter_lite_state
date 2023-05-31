@@ -1,3 +1,5 @@
+## 2.1.0
+* Added a single use controllers
 ## 2.0.2
 * Removed throw when it's impossible to decode a data and added a description instead
 ## 2.0.1

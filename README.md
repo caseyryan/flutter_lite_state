@@ -54,7 +54,13 @@ class AuthController extends LiteStateController<AuthController> {
 }
 ```
 
-2) Add initialization of your controller somewhere in the beginning of your app
+2)
+
+## INITIALIZATION OF CONTROLLERS
+
+### You have two options here
+
+1) Add initialization of your controller somewhere in the beginning of your app
 e.g. in initState() {} of your main class 
 ```dart
 void main() {
@@ -99,8 +105,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 ```
-
-3) Just you LiteState builder any where you need
+Just you LiteState builder any where you need
 ```dart
 Widget build(BuildContext context) {
   return LiteState<AuthController>(
@@ -111,6 +116,48 @@ Widget build(BuildContext context) {
 }
 
 ```
+
+### OR
+
+You can use a single use controller like this 
+BE AWARE that in this case you controller will be disposed as soon 
+as LiteState widget, where you pass it, is disposed
+The controller like this will override any other controller of the same time 
+that you might have initialized via initControllers or initControllersLazy
+
+```dart
+return LiteState<SingleUseController>(
+  controller: SingleUseController(),
+  builder: (BuildContext c, SingleUseController controller) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Single Use Controller'),
+      ),
+      body: Center(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              controller.counter.toString(),
+              style: const TextStyle(
+                fontSize: 50.0,
+              ),
+            ),
+            Button(
+              text: 'Update Counter',
+              onPressed: () {
+                controller.counter++;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  },
+);
+
+```
+
 
 ## Usage
 

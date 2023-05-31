@@ -4,6 +4,7 @@ import 'package:lite_state/lite_state.dart';
 
 import 'button.dart';
 import 'lite_state_controllers/auth_controller.dart';
+import 'single_use_controller_page.dart';
 
 class TestPage extends StatelessWidget {
   const TestPage({Key? key}) : super(key: key);
@@ -61,12 +62,6 @@ class TestPage extends StatelessWidget {
                     }
                   },
                 ),
-                // Button(
-                //   text: 'reset controller',
-                //   onPressed: () {
-                //     disposeControllerByType(AuthController);
-                //   },
-                // ),
                 _buildLoadersButton(context),
                 const Padding(
                   padding: EdgeInsets.only(
@@ -77,6 +72,21 @@ class TestPage extends StatelessWidget {
                   child: Text(
                     'Notice that your authorization is storede across sessions in a persistant local storage. Reload the app and you will see that authorization is still there',
                   ),
+                ),
+                const SizedBox(
+                  height: 50,
+                ),
+                Button(
+                  text: 'Open Single Use Controller Page',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return const SingleUseControllerPage();
+                        },
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
