@@ -126,22 +126,22 @@ String _getNoControllerErrorText(String typeKey) {
 // String _getControllerExistsText(String typeKey) {
 //   return '''
 //           The controller for $typeKey is already initialized.
-//           Please use findController<T>() generic function 
-//           to find a controller you need and do not initialize 
+//           Please use findController<T>() generic function
+//           to find a controller you need and do not initialize
 //           the controllers by calling their constructors directly
 //           use special global functions instead. E.g.
 //           initControllersLazy({
 //             AppBarController: () => AppBarController(),
 //             ThemeController: () => ThemeController(),
 //           });
-//           or 
+//           or
 //           initControllers({
 //             AppBarController: () => AppBarController(),
 //             ThemeController: () => ThemeController(),
 //           });
-//           if you need to initialized them all at ones. 
+//           if you need to initialized them all at ones.
 //           You can use both initControllersLazy() and initControllers()
-//           together. Don't worry, a controller can still be initialized 
+//           together. Don't worry, a controller can still be initialized
 //           only once
 //         ''';
 // }
