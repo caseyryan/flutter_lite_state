@@ -32,7 +32,7 @@ class AuthController extends LiteStateController<AuthController> {
   /// if initialized. You can use it to store / restore persistant
   /// data like Bearer tokens or something like this
   @override
-  void onLocalStorageInitialied() {
+  void onLocalStorageInitialized() {
     /// this is the place where all your local data is
     /// already initialized
   }

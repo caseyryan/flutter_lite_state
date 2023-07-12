@@ -1,3 +1,6 @@
+## 2.2.0
+* Breaking change. Corrected a typo.
+Renamed onLocalStorageInitialied to onLocalStorageInitialized. 
 ## 2.1.0
 * Added a single use controllers
 ## 2.0.2
@@ -5,7 +8,7 @@
 ## 2.0.1
 * Added disposeControllerByType() global method which allows to completely kill a controller
 ## 2.0.0
-* Drammatically simplified and improved a work with JSON encoders and decoders 
+* Dramatically simplified and improved a work with JSON encoders and decoders 
 for local storage
 * Added more information to the docs
 ## 1.0.4

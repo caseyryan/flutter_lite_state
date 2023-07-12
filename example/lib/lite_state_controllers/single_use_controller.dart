@@ -18,5 +18,5 @@ class SingleUseController extends LiteStateController<SingleUseController> {
   @override
   void reset() {}
   @override
-  void onLocalStorageInitialied() {}
+  void onLocalStorageInitialized() {}
 }

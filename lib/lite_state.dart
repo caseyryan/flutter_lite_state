@@ -514,7 +514,7 @@ abstract class LiteStateController<T> {
           reviver: _reviveValue,
         )?.cast<String, dynamic>();
       }
-      onLocalStorageInitialied();
+      onLocalStorageInitialized();
       rebuild();
     }
   }
@@ -522,7 +522,7 @@ abstract class LiteStateController<T> {
   /// called when the local storage has
   /// loaded all stored values. Override it if you
   /// need to get some values from local storage
-  void onLocalStorageInitialied() {}
+  void onLocalStorageInitialized() {}
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
