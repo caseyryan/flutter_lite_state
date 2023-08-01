@@ -42,6 +42,7 @@ void disposeControllerByType(Type controllerType) {
   final controller = _controllers[typeKey];
   if (controller != null) {
     controller.reset();
+    controller._disposeStream();
     _controllers.remove(typeKey);
   }
 }
@@ -72,7 +73,7 @@ typedef Decoder = Object? Function(Map);
 /// into a user defined object. In this case a custom class
 /// called AuthData
 ///
-/// IMPORTANT! Bafore decoding enythig, you need to encode it first
+/// IMPORTANT! Before decoding anything, you need to encode it first
 /// but to be able to be encoded to JSON
 /// your custom classes must implement LSJsonEncodable interface
 /// from LiteState package. See AuthData in an example project
@@ -165,6 +166,7 @@ void _addTemporaryController<T>(
   _controllers[typeKey] = controller;
 }
 
+/// fc - short for Find Controller
 T fc<T extends LiteStateController>() {
   return findController<T>();
 }
@@ -326,6 +328,14 @@ abstract class LiteStateController<T> {
       _streamController.sink.add(this as T);
     }
     return _streamControllers[key];
+  }
+
+  void _disposeStream() {
+    final key = T.toString();
+    if (_streamControllers.containsKey(key)) {
+      _streamControllers[key].close();
+      _streamControllers.remove(key);
+    }
   }
 
   void reset();

@@ -1,3 +1,5 @@
+## 2.3.0
+* Fixed not closed broadcast stream for a single use controller
 ## 2.2.0
 * Breaking change. Corrected a typo.
 Renamed onLocalStorageInitialied to onLocalStorageInitialized. 
@@ -13,7 +15,7 @@ for local storage
 * Added more information to the docs
 ## 1.0.4
 * Added a global method resetAllControllers() which calls "reset()" method 
-* on all initialized controllers. It's an abstract method and must be overriden in all the controllers
+* on all initialized controllers. It's an abstract method and must be overridden in all the controllers
 ## 1.0.3
 * Rebuild after setPersistentValue
 ## 1.0.2
