@@ -1,3 +1,5 @@
+## 2.3.1
+* Changed error background color from red to transparent
 ## 2.3.0
 * Fixed not closed broadcast stream for a single use controller
 ## 2.2.0

@@ -289,7 +289,7 @@ class _LiteStateState<T extends LiteStateController>
       return _streamBuilder();
     }
     return Container(
-      color: Colors.red,
+      color: Colors.transparent,
     );
   }
 }
