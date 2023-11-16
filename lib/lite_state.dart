@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+SharedPreferences? _sharedPreferences;
+
 typedef ControllerInitializer = LiteStateController Function();
 
 Map<String, ControllerInitializer> _lazyControllerInitializers = {};
@@ -319,7 +321,20 @@ class _EncodedValueWrapper {
 }
 
 abstract class LiteStateController<T> {
+  LiteStateController({
+    this.useLocalStorage = true,
+    this.measureStorageInitializationTime = false,
+  }) {
+    _init();
+  }
+
   static final Map<String, dynamic> _streamControllers = {};
+
+  final bool useLocalStorage;
+
+  /// Can be used for debugging purposes to find out if
+  /// your local storage takes too much time for initializations
+  final bool measureStorageInitializationTime;
 
   StreamController<T> get _streamController {
     final key = T.toString();
@@ -343,12 +358,8 @@ abstract class LiteStateController<T> {
   Stream<T> get _stream => _streamController.stream.asBroadcastStream();
 
   final Map<String, bool> _loaderFlags = {};
-  SharedPreferences? _prefs;
-  Map<String, dynamic> _persistentData = {};
 
-  LiteStateController() {
-    _init();
-  }
+  Map<String, dynamic> _persistentData = {};
 
   /// This hack is necessary to give the type some time
   /// to be initialized since you can't add anything by type
@@ -362,12 +373,12 @@ abstract class LiteStateController<T> {
   }
 
   /// It's just a utility method in case you need to
-  /// simlulate some loading or just wait for something
+  /// simulate some loading or just wait for something
   Future delay(int millis) async {
     await Future.delayed(Duration(milliseconds: millis));
   }
 
-  /// Retrieves a persistend data stored in SharedPreferences
+  /// Retrieves a persistent data stored in SharedPreferences
   /// You can use your own types here but in this
   /// case you need to add json encoders / revivers so that
   /// jsonEncode / jsonDecode could understand how to work with your type
@@ -384,19 +395,19 @@ abstract class LiteStateController<T> {
     } else {
       _persistentData[key] = value;
     }
-    await _updateLocalPrefs();
+    await _updateLocalPreferences();
     rebuild();
   }
 
-  Future _updateLocalPrefs() async {
-    if (_prefs != null) {
+  Future _updateLocalPreferences() async {
+    if (_sharedPreferences != null) {
       try {
         final data = jsonEncode(
           _persistentData,
           toEncodable: _encodeValue,
         );
-        await _prefs!.setString(
-          _prefsKey,
+        await _sharedPreferences!.setString(
+          _preferencesKey,
           data,
         );
       } catch (e) {
@@ -501,32 +512,46 @@ abstract class LiteStateController<T> {
     return value;
   }
 
-  String get _prefsKey {
+  String get _preferencesKey {
     return runtimeType.toString();
   }
 
   Future clearPersistentData() async {
-    if (_prefs != null) {
+    if (_sharedPreferences != null) {
       _persistentData.clear();
-      await _prefs?.remove(_prefsKey);
+      await _sharedPreferences?.remove(_preferencesKey);
     }
   }
 
   Future _initLocalStorage() async {
-    if (_prefs == null) {
-      _prefs = await SharedPreferences.getInstance();
-      final string = _prefs!.getString(_prefsKey);
-      if (string == null) {
-        _persistentData = <String, dynamic>{};
-      } else {
-        _persistentData = jsonDecode(
-          string,
-          reviver: _reviveValue,
-        )?.cast<String, dynamic>();
-      }
-      onLocalStorageInitialized();
-      rebuild();
+    if (!useLocalStorage) {
+      return;
     }
+    Stopwatch? stopwatch;
+    if (measureStorageInitializationTime) {
+      if (kDebugMode) {
+        stopwatch = Stopwatch()..start();
+      }
+    }
+    _sharedPreferences ??= await SharedPreferences.getInstance();
+    final string = _sharedPreferences!.getString(_preferencesKey);
+    if (string == null) {
+      _persistentData = <String, dynamic>{};
+    } else {
+      _persistentData = jsonDecode(
+        string,
+        reviver: _reviveValue,
+      )?.cast<String, dynamic>();
+    }
+    if (measureStorageInitializationTime) {
+      if (kDebugMode) {
+        print(
+          '_initLocalStorage() took: ${stopwatch?.elapsed.inMilliseconds} milliseconds',
+        );
+      }
+    }
+    onLocalStorageInitialized();
+    rebuild();
   }
 
   /// called when the local storage has

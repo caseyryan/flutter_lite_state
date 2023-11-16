@@ -1,6 +1,12 @@
 import 'package:lite_state/lite_state.dart';
 
 class LoaderController extends LiteStateController<LoaderController> {
+  LoaderController()
+      : super(
+          useLocalStorage: true,
+          measureStorageInitializationTime: true,
+        );
+
   Future load1() async {
     /// you can control what elements should be blocked
     /// by setting some properties specially for them

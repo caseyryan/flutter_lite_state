@@ -1,3 +1,5 @@
+## 2.3.3
+* Initialization of shared preferences fixed. Now the callback is guaranteed to be called
 ## 2.3.1
 * Changed error background color from red to transparent
 ## 2.3.0
