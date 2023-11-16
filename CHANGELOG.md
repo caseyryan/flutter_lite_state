@@ -1,3 +1,5 @@
+## 2.3.4
+* Added debugging of local storage
 ## 2.3.3
 * Initialization of shared preferences fixed. Now the callback is guaranteed to be called
 ## 2.3.1

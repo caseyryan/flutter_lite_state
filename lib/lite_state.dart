@@ -546,7 +546,7 @@ abstract class LiteStateController<T> {
     if (measureStorageInitializationTime) {
       if (kDebugMode) {
         print(
-          '_initLocalStorage() took: ${stopwatch?.elapsed.inMilliseconds} milliseconds',
+          '${_preferencesKey}_initLocalStorage() took: ${stopwatch?.elapsed.inMilliseconds} milliseconds',
         );
       }
     }
