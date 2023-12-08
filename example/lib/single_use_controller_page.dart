@@ -40,6 +40,16 @@ class SingleUseControllerPage extends StatelessWidget {
                   },
                 ),
                 Button(
+                  text: 'Save List',
+                  onPressed: () {
+                    controller.setList([
+                      'one',
+                      'two',
+                      'tree',
+                    ]);
+                  },
+                ),
+                Button(
                   text: 'Clear',
                   onPressed: () async {
                     controller.clearPersistentData(true);

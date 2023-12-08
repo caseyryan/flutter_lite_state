@@ -1,3 +1,5 @@
+## 2.4.5
+* List storage
 ## 2.4.4
 * Added generic type logging
 ## 2.4.3

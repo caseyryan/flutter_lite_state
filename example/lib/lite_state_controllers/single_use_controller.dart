@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:lite_state/lite_state.dart';
 
 SingleUseController get singleUseController {
@@ -20,9 +21,18 @@ class SingleUseController extends LiteStateController<SingleUseController> {
       'date',
       DateTime.now(),
     );
+  }
 
-    final date = getPersistentValue('date');
-    print(date);
+  Future setList(List value) async {
+    await setPersistentValue(
+      'list',
+      value,
+    );
+
+    final list = getPersistentValue('list');
+    if (kDebugMode) {
+      print(list);
+    }
   }
 
   set counter(int value) {

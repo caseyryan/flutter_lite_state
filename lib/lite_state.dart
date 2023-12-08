@@ -418,25 +418,31 @@ abstract class LiteStateController<T> {
     final typeName = nonEncodable.runtimeType.toString();
     if (nonEncodable is DateTime) {
       return _EncodedValueWrapper(
-        typeName: typeName,
+        typeName: 'DateTime',
         value: {
           'date': nonEncodable.toIso8601String(),
         },
       )._toEncodedJson();
     } else if (nonEncodable is io.File) {
       return _EncodedValueWrapper(
-        typeName: typeName,
+        typeName: "File",
         value: {
           'path': nonEncodable.path,
+        },
+      )._toEncodedJson();
+    } else if (nonEncodable is List) {
+      final list = nonEncodable.map((e) => _encodeValue(e)).toList();
+      return _EncodedValueWrapper(
+        typeName: 'List',
+        value: {
+          'list': list,
         },
       )._toEncodedJson();
     }
     if (_isPrimitiveType(typeName)) {
       return nonEncodable;
     }
-    if (typeName.contains('<')) {
-      throw 'Encodable type must not be generic. Actual type: $typeName';
-    }
+
     if (nonEncodable is! LSJsonEncodable) {
       throw 'Your class must implement JsonEncodable before it can be converted to JSON';
     }
@@ -480,10 +486,14 @@ abstract class LiteStateController<T> {
             base64Decode(innerValue),
           ),
         ) as Map;
-        if (typeName == '$DateTime') {
+        if (typeName == 'DateTime') {
           return DateTime.tryParse(mapFromBase64['date'] ?? '');
         } else if (typeName == 'File') {
           return io.File(mapFromBase64['path']);
+        } else if (typeName == 'List') {
+          List list = mapFromBase64['list'];
+          final result = list.map((e) => _reviveValue(key, e)).toList();
+          return result;
         } else if (_jsonDecoders[typeName] != null) {
           final Decoder decode = _jsonDecoders[typeName] as Decoder;
           return decode(mapFromBase64);
