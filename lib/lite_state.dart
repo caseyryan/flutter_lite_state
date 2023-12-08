@@ -431,11 +431,11 @@ abstract class LiteStateController<T> {
         },
       )._toEncodedJson();
     }
-    if (typeName.contains('<')) {
-      throw 'Encodable type must not be generic. Actual type: $typeName';
-    }
     if (_isPrimitiveType(typeName)) {
       return nonEncodable;
+    }
+    if (typeName.contains('<')) {
+      throw 'Encodable type must not be generic. Actual type: $typeName';
     }
     if (nonEncodable is! LSJsonEncodable) {
       throw 'Your class must implement JsonEncodable before it can be converted to JSON';
