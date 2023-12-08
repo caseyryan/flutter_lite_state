@@ -1,3 +1,5 @@
+## 2.4.4
+* Added generic type logging
 ## 2.4.3
 * clearPersistentData() now has a parameter forceReBuild and does not kill a Hive box
 ## 2.4.2

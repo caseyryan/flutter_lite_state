@@ -84,7 +84,7 @@ void initJsonDecoders(Map<Type, Decoder> value) {
   for (var v in value.entries) {
     final key = v.key.toString();
     if (key.contains('<')) {
-      throw 'Encodable type must not be generic';
+      throw 'Encodable type must not be generic. Actual type: $key';
     }
     _jsonDecoders[key] = v.value;
   }
@@ -432,7 +432,7 @@ abstract class LiteStateController<T> {
       )._toEncodedJson();
     }
     if (typeName.contains('<')) {
-      throw 'Encodable type must not be generic';
+      throw 'Encodable type must not be generic. Actual type: $typeName';
     }
     if (_isPrimitiveType(typeName)) {
       return nonEncodable;
