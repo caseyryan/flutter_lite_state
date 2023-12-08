@@ -1,3 +1,5 @@
+## 2.3.5
+* Moved from SharedPreferences to Hive because SharedPreferences initialization is very slow on Android
 ## 2.3.4
 * Added debugging of local storage
 ## 2.3.3

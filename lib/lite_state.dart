@@ -4,9 +4,8 @@ import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-SharedPreferences? _sharedPreferences;
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 
 typedef ControllerInitializer = LiteStateController Function();
 
@@ -188,8 +187,7 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) ||
-      _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -216,8 +214,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController>
-    extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
   Widget? _child;
 
   @override
@@ -332,6 +329,8 @@ abstract class LiteStateController<T> {
 
   final bool useLocalStorage;
 
+  Box? _hiveBox;
+
   /// Can be used for debugging purposes to find out if
   /// your local storage takes too much time for initializations
   final bool measureStorageInitializationTime;
@@ -359,8 +358,6 @@ abstract class LiteStateController<T> {
 
   final Map<String, bool> _loaderFlags = {};
 
-  Map<String, dynamic> _persistentData = {};
-
   /// This hack is necessary to give the type some time
   /// to be initialized since you can't add anything by type
   /// from the constructor
@@ -383,7 +380,14 @@ abstract class LiteStateController<T> {
   /// case you need to add json encoders / revivers so that
   /// jsonEncode / jsonDecode could understand how to work with your type
   TType? getPersistentValue<TType>(String key) {
-    return _persistentData[key] as TType?;
+    if (_hiveBox == null) {
+      return null;
+    }
+    final value = _hiveBox?.get(key);
+    if (value is String && value.contains('{')) {
+      return _reviveValue(key, value) as TType?;
+    }
+    return value as TType?;
   }
 
   Future setPersistentValue<TType>(
@@ -391,31 +395,12 @@ abstract class LiteStateController<T> {
     TType? value,
   ) async {
     if (value == null) {
-      _persistentData.remove(key);
+      await _hiveBox?.delete(key);
     } else {
-      _persistentData[key] = value;
+      final encodedValue = _encodeValue(value);
+      _hiveBox?.put(key, encodedValue);
     }
-    await _updateLocalPreferences();
     rebuild();
-  }
-
-  Future _updateLocalPreferences() async {
-    if (_sharedPreferences != null) {
-      try {
-        final data = jsonEncode(
-          _persistentData,
-          toEncodable: _encodeValue,
-        );
-        await _sharedPreferences!.setString(
-          _preferencesKey,
-          data,
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          print(e);
-        }
-      }
-    }
   }
 
   String? _encodeValue(Object? nonEncodable) {
@@ -517,9 +502,8 @@ abstract class LiteStateController<T> {
   }
 
   Future clearPersistentData() async {
-    if (_sharedPreferences != null) {
-      _persistentData.clear();
-      await _sharedPreferences?.remove(_preferencesKey);
+    if (_hiveBox != null) {
+      await Hive.deleteBoxFromDisk(_preferencesKey);
     }
   }
 
@@ -533,16 +517,26 @@ abstract class LiteStateController<T> {
         stopwatch = Stopwatch()..start();
       }
     }
-    _sharedPreferences ??= await SharedPreferences.getInstance();
-    final string = _sharedPreferences!.getString(_preferencesKey);
-    if (string == null) {
-      _persistentData = <String, dynamic>{};
-    } else {
-      _persistentData = jsonDecode(
-        string,
-        reviver: _reviveValue,
-      )?.cast<String, dynamic>();
+    if (_hiveBox == null) {
+      final supportDir = await getApplicationSupportDirectory();
+      _hiveBox = await Hive.openBox(
+        _preferencesKey,
+        path: supportDir.path,
+        // encryptionCipher: HiveAesCipher(
+        //   Hive.generateSecureKey(),
+        // ),
+      );
     }
+    // final string = _hiveBox!.get(_preferencesKey);
+    // if (string == null) {
+    //   _persistentData = <String, dynamic>{};
+    // } else {
+    //   _persistentData = jsonDecode(
+    //     string,
+    //     reviver: _reviveValue,
+    //   )?.cast<String, dynamic>();
+    // }
+
     if (measureStorageInitializationTime) {
       if (kDebugMode) {
         print(
