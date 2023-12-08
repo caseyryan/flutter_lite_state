@@ -1,6 +1,6 @@
 import 'package:lite_state/lite_state.dart';
 
-SingleUseController get singleuseController {
+SingleUseController get singleUseController {
   return findController<SingleUseController>();
 }
 
@@ -16,10 +16,13 @@ class SingleUseController extends LiteStateController<SingleUseController> {
   }
 
   Future setDate() async {
-    setPersistentValue(
+    await setPersistentValue(
       'date',
       DateTime.now(),
     );
+
+    final date = getPersistentValue('date');
+    print(date);
   }
 
   set counter(int value) {

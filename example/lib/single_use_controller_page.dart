@@ -39,6 +39,12 @@ class SingleUseControllerPage extends StatelessWidget {
                     controller.setDate();
                   },
                 ),
+                Button(
+                  text: 'Clear',
+                  onPressed: () async {
+                    controller.clearPersistentData(true);
+                  },
+                ),
               ],
             ),
           ),

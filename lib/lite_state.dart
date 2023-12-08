@@ -524,9 +524,14 @@ abstract class LiteStateController<T> {
     return runtimeType.toString();
   }
 
-  Future clearPersistentData() async {
+  Future clearPersistentData([
+    bool forceReBuild = false,
+  ]) async {
     if (_hiveBox != null) {
-      await Hive.deleteBoxFromDisk(_preferencesKey);
+      await _hiveBox!.clear();
+      if (forceReBuild) {
+        rebuild();
+      }
     }
   }
 

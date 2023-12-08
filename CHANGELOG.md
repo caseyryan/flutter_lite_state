@@ -1,3 +1,5 @@
+## 2.4.3
+* clearPersistentData() now has a parameter forceReBuild and does not kill a Hive box
 ## 2.4.2
 * Fixed encoder and reviver
 * Builder is not called until local storage is initialized
