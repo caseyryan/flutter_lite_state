@@ -249,6 +249,11 @@ class _LiteStateState<T extends LiteStateController>
       stream: _controller!._stream,
       initialData: _controller as T,
       builder: (BuildContext c, AsyncSnapshot<T> snapshot) {
+        if (_controller!.useLocalStorage) {
+          if (!_controller!.isLocalStorageInitialized) {
+            return const SizedBox.shrink();
+          }
+        }
         if (snapshot.hasData) {
           _child = widget.builder(
             c,
@@ -333,6 +338,10 @@ abstract class LiteStateController<T> {
 
   Box? _hiveBox;
 
+  bool get isLocalStorageInitialized {
+    return _hiveBox != null;
+  }
+
   /// Can be used for debugging purposes to find out if
   /// your local storage takes too much time for initializations
   final bool measureStorageInitializationTime;
@@ -405,28 +414,36 @@ abstract class LiteStateController<T> {
     rebuild();
   }
 
-  String? _encodeValue(Object? nonEncodable) {
-    dynamic value;
-    if (nonEncodable is DateTime) {
-      return nonEncodable.toIso8601String();
-    } else if (nonEncodable is io.File) {
-      return nonEncodable.path;
-    }
+  Object? _encodeValue(Object? nonEncodable) {
     final typeName = nonEncodable.runtimeType.toString();
+    if (nonEncodable is DateTime) {
+      return _EncodedValueWrapper(
+        typeName: typeName,
+        value: {
+          'date': nonEncodable.toIso8601String(),
+        },
+      )._toEncodedJson();
+    } else if (nonEncodable is io.File) {
+      return _EncodedValueWrapper(
+        typeName: typeName,
+        value: {
+          'path': nonEncodable.path,
+        },
+      )._toEncodedJson();
+    }
     if (typeName.contains('<')) {
       throw 'Encodable type must not be generic';
     }
     if (_isPrimitiveType(typeName)) {
-      return value;
+      return nonEncodable;
     }
     if (nonEncodable is! LSJsonEncodable) {
       throw 'Your class must implement JsonEncodable before it can be converted to JSON';
     }
-    final wrapper = _EncodedValueWrapper(
+    return _EncodedValueWrapper(
       typeName: typeName,
       value: nonEncodable.encode(),
-    );
-    return wrapper._toEncodedJson();
+    )._toEncodedJson();
   }
 
   bool _isPrimitiveType(String typeName) {
@@ -457,14 +474,18 @@ abstract class LiteStateController<T> {
     if (map != null) {
       if (map['type'] == '_EncodedValueWrapper') {
         final typeName = map['typeName'];
-        if (_jsonDecoders[typeName] != null) {
+        final String innerValue = map['value'];
+        final Map mapFromBase64 = jsonDecode(
+          utf8.decode(
+            base64Decode(innerValue),
+          ),
+        ) as Map;
+        if (typeName == '$DateTime') {
+          return DateTime.tryParse(mapFromBase64['date'] ?? '');
+        } else if (typeName == 'File') {
+          return io.File(mapFromBase64['path']);
+        } else if (_jsonDecoders[typeName] != null) {
           final Decoder decode = _jsonDecoders[typeName] as Decoder;
-          final String innerValue = map['value'];
-          final Map mapFromBase64 = jsonDecode(
-            utf8.decode(
-              base64Decode(innerValue),
-            ),
-          ) as Map;
           return decode(mapFromBase64);
         } else {
           if (kDebugMode) {
@@ -529,15 +550,6 @@ abstract class LiteStateController<T> {
         // ),
       );
     }
-    // final string = _hiveBox!.get(_preferencesKey);
-    // if (string == null) {
-    //   _persistentData = <String, dynamic>{};
-    // } else {
-    //   _persistentData = jsonDecode(
-    //     string,
-    //     reviver: _reviveValue,
-    //   )?.cast<String, dynamic>();
-    // }
 
     if (measureStorageInitializationTime) {
       if (kDebugMode) {

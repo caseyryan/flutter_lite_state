@@ -10,6 +10,18 @@ class SingleUseController extends LiteStateController<SingleUseController> {
     return _counter;
   }
 
+  String? get date {
+    final date = getPersistentValue('date');
+    return date?.toString() ?? 'none';
+  }
+
+  Future setDate() async {
+    setPersistentValue(
+      'date',
+      DateTime.now(),
+    );
+  }
+
   set counter(int value) {
     _counter = value;
     rebuild();

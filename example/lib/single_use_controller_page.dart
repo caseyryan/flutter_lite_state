@@ -26,10 +26,17 @@ class SingleUseControllerPage extends StatelessWidget {
                     fontSize: 50.0,
                   ),
                 ),
+                if (controller.date != null) Text(controller.date!),
                 Button(
                   text: 'Update Counter',
                   onPressed: () {
                     controller.counter++;
+                  },
+                ),
+                Button(
+                  text: 'Set Date',
+                  onPressed: () {
+                    controller.setDate();
                   },
                 ),
               ],

@@ -1,3 +1,6 @@
+## 2.4.2
+* Fixed encoder and reviver
+* Builder is not called until local storage is initialized
 ## 2.3.5
 * Moved from SharedPreferences to Hive because SharedPreferences initialization is very slow on Android
 ## 2.3.4
