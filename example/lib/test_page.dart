@@ -1,4 +1,5 @@
 import 'package:example/loader_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lite_state/lite_state.dart';
 
@@ -12,7 +13,7 @@ class TestPage extends StatelessWidget {
   Widget _buildUserName() {
     /// I use authController global property here instead of
     /// calling findController<AuthController>()
-    /// but it does call findController inside. It's just a shorhand
+    /// but it does call findController inside. It's just a shorthand
     return Text('Welcome, ${authController.userName}');
   }
 
@@ -34,6 +35,13 @@ class TestPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LiteState<AuthController>(
+      onReady: (AuthController controller) {
+        if (kDebugMode) {
+          print('$AuthController first build of $this');
+          final authData = controller.getPersistentValue('authData');
+          print(authData);
+        }
+      },
       builder: (BuildContext c, AuthController controller) {
         return Scaffold(
           appBar: AppBar(),
@@ -70,7 +78,7 @@ class TestPage extends StatelessWidget {
                     top: 20.0,
                   ),
                   child: Text(
-                    'Notice that your authorization is storede across sessions in a persistant local storage. Reload the app and you will see that authorization is still there',
+                    'Notice that your authorization is stored across sessions in a persistent local storage. Reload the app and you will see that authorization is still there',
                   ),
                 ),
                 const SizedBox(

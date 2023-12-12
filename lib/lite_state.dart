@@ -187,8 +187,7 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) ||
-      _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -199,15 +198,20 @@ typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
 class LiteState<T extends LiteStateController> extends StatefulWidget {
   final LiteStateBuilder<T> builder;
   final LiteStateController<T>? controller;
+  final ValueChanged<T>? onReady;
 
   /// [builder] a function that will be called every time
   /// you call rebuild in your controller
   /// [controller] if you don't need a persistent controller
   /// pass a new instance of controller here and it will be disposed
   /// as soon as your LiteState widget is disposed
+  /// [onReady] this callback is guaranteed to be called after
+  /// [LiteState] has completed initialization and local storage
+  /// already can be used
   const LiteState({
     required this.builder,
     this.controller,
+    this.onReady,
     Key? key,
   }) : super(key: key);
 
@@ -215,9 +219,9 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController>
-    extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
   Widget? _child;
+  bool _isReady = false;
 
   @override
   void initState() {
@@ -244,12 +248,20 @@ class _LiteStateState<T extends LiteStateController>
     super.dispose();
   }
 
+  void _tryCallOnReady() {
+    if (_isReady == true || _controller == null) {
+      return;
+    }
+    _isReady = true;
+    widget.onReady?.call(_controller! as T);
+  }
+
   Widget _streamBuilder() {
     return StreamBuilder<T>(
       stream: _controller!._stream,
       initialData: _controller as T,
       builder: (BuildContext c, AsyncSnapshot<T> snapshot) {
-        if (_controller!.useLocalStorage) {
+        if (_controller?.useLocalStorage == true) {
           if (!_controller!.isLocalStorageInitialized) {
             return const SizedBox.shrink();
           }
@@ -259,6 +271,9 @@ class _LiteStateState<T extends LiteStateController>
             c,
             snapshot.data!,
           );
+        }
+        if (_child != null && widget.onReady != null) {
+          _tryCallOnReady();
         }
         return _child ?? const SizedBox.shrink();
       },

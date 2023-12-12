@@ -1,3 +1,6 @@
+## 2.4.6
+* `LiteState` constructor now can accept `onReady` callback which will be called 
+when the controller has initialized it's local storage and `LiteState` has completed its first build. You can use this callback to start some operations that require local storage of the controller to be already initiated
 ## 2.4.5
 * List storage
 ## 2.4.4
