@@ -43,6 +43,7 @@ void disposeControllerByType(Type controllerType) {
   final controller = _controllers[typeKey];
   if (controller != null) {
     controller.reset();
+    controller.clearPersistentData();
     controller._disposeStream();
     _controllers.remove(typeKey);
   }
