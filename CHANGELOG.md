@@ -1,3 +1,5 @@
+## 2.4.8
+* Maps can also now be stored in `Hive` based storage
 ## 2.4.7
 * Clear persistent data on controller dispose
 ## 2.4.6

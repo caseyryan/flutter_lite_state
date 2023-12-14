@@ -456,6 +456,17 @@ abstract class LiteStateController<T> {
           'list': list,
         },
       )._toEncodedJson();
+    } else if (nonEncodable is Map) {
+      final mapped = {};
+      for (var kv in nonEncodable.entries) {
+        mapped[kv.key] = _encodeValue(kv.value);
+      }
+      return _EncodedValueWrapper(
+        typeName: 'Map',
+        value: {
+          'map': mapped,
+        },
+      )._toEncodedJson();
     }
     if (_isPrimitiveType(typeName)) {
       return nonEncodable;
@@ -512,6 +523,14 @@ abstract class LiteStateController<T> {
           List list = mapFromBase64['list'];
           final result = list.map((e) => _reviveValue(key, e)).toList();
           return result;
+        } else if (typeName == 'Map') {
+          Map map = mapFromBase64['map'];
+          final revivedMap = {};
+          for (var kv in map.entries) {
+            final value = _reviveValue(kv.key, kv.value);
+            revivedMap[kv.key] = value;
+          }
+          return revivedMap;
         } else if (_jsonDecoders[typeName] != null) {
           final Decoder decode = _jsonDecoders[typeName] as Decoder;
           return decode(mapFromBase64);

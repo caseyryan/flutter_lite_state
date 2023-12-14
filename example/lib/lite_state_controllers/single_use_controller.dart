@@ -35,6 +35,20 @@ class SingleUseController extends LiteStateController<SingleUseController> {
     }
   }
 
+  Future saveMap() async {
+    await setPersistentValue(
+      'map',
+      {
+        'inMapList': ['one', 'two']
+      },
+    );
+
+    final map = getPersistentValue('map');
+    if (kDebugMode) {
+      print(map);
+    }
+  }
+
   set counter(int value) {
     _counter = value;
     rebuild();

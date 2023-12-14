@@ -50,6 +50,12 @@ class SingleUseControllerPage extends StatelessWidget {
                   },
                 ),
                 Button(
+                  text: 'Save Map',
+                  onPressed: () {
+                    controller.saveMap();
+                  },
+                ),
+                Button(
                   text: 'Clear',
                   onPressed: () async {
                     controller.clearPersistentData(true);
