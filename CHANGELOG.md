@@ -1,3 +1,21 @@
+## 2.4.8
+* Maps can also now be stored in `Hive` based storage
+## 2.4.7
+* Clear persistent data on controller dispose
+## 2.4.6
+* `LiteState` constructor now can accept `onReady` callback which will be called 
+when the controller has initialized it's local storage and `LiteState` has completed its first build. You can use this callback to start some operations that require local storage of the controller to be already initiated
+## 2.4.5
+* List storage
+## 2.4.4
+* Added generic type logging
+## 2.4.3
+* clearPersistentData() now has a parameter forceReBuild and does not kill a Hive box
+## 2.4.2
+* Fixed encoder and reviver
+* Builder is not called until local storage is initialized
+## 2.3.5
+* Moved from SharedPreferences to Hive because SharedPreferences initialization is very slow on Android
 ## 2.3.4
 * Added debugging of local storage
 ## 2.3.3

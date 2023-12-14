@@ -4,9 +4,8 @@ import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-SharedPreferences? _sharedPreferences;
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 
 typedef ControllerInitializer = LiteStateController Function();
 
@@ -44,6 +43,7 @@ void disposeControllerByType(Type controllerType) {
   final controller = _controllers[typeKey];
   if (controller != null) {
     controller.reset();
+    controller.clearPersistentData();
     controller._disposeStream();
     _controllers.remove(typeKey);
   }
@@ -85,7 +85,7 @@ void initJsonDecoders(Map<Type, Decoder> value) {
   for (var v in value.entries) {
     final key = v.key.toString();
     if (key.contains('<')) {
-      throw 'Encodable type must not be generic';
+      throw 'Encodable type must not be generic. Actual type: $key';
     }
     _jsonDecoders[key] = v.value;
   }
@@ -200,15 +200,20 @@ typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
 class LiteState<T extends LiteStateController> extends StatefulWidget {
   final LiteStateBuilder<T> builder;
   final LiteStateController<T>? controller;
+  final ValueChanged<T>? onReady;
 
   /// [builder] a function that will be called every time
   /// you call rebuild in your controller
   /// [controller] if you don't need a persistent controller
   /// pass a new instance of controller here and it will be disposed
   /// as soon as your LiteState widget is disposed
+  /// [onReady] this callback is guaranteed to be called after
+  /// [LiteState] has completed initialization and local storage
+  /// already can be used
   const LiteState({
     required this.builder,
     this.controller,
+    this.onReady,
     Key? key,
   }) : super(key: key);
 
@@ -219,6 +224,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
 class _LiteStateState<T extends LiteStateController>
     extends State<LiteState<T>> {
   Widget? _child;
+  bool _isReady = false;
 
   @override
   void initState() {
@@ -245,16 +251,32 @@ class _LiteStateState<T extends LiteStateController>
     super.dispose();
   }
 
+  void _tryCallOnReady() {
+    if (_isReady == true || _controller == null) {
+      return;
+    }
+    _isReady = true;
+    widget.onReady?.call(_controller! as T);
+  }
+
   Widget _streamBuilder() {
     return StreamBuilder<T>(
       stream: _controller!._stream,
       initialData: _controller as T,
       builder: (BuildContext c, AsyncSnapshot<T> snapshot) {
+        if (_controller?.useLocalStorage == true) {
+          if (!_controller!.isLocalStorageInitialized) {
+            return const SizedBox.shrink();
+          }
+        }
         if (snapshot.hasData) {
           _child = widget.builder(
             c,
             snapshot.data!,
           );
+        }
+        if (_child != null && widget.onReady != null) {
+          _tryCallOnReady();
         }
         return _child ?? const SizedBox.shrink();
       },
@@ -332,6 +354,12 @@ abstract class LiteStateController<T> {
 
   final bool useLocalStorage;
 
+  Box? _hiveBox;
+
+  bool get isLocalStorageInitialized {
+    return _hiveBox != null;
+  }
+
   /// Can be used for debugging purposes to find out if
   /// your local storage takes too much time for initializations
   final bool measureStorageInitializationTime;
@@ -359,8 +387,6 @@ abstract class LiteStateController<T> {
 
   final Map<String, bool> _loaderFlags = {};
 
-  Map<String, dynamic> _persistentData = {};
-
   /// This hack is necessary to give the type some time
   /// to be initialized since you can't add anything by type
   /// from the constructor
@@ -383,7 +409,14 @@ abstract class LiteStateController<T> {
   /// case you need to add json encoders / revivers so that
   /// jsonEncode / jsonDecode could understand how to work with your type
   TType? getPersistentValue<TType>(String key) {
-    return _persistentData[key] as TType?;
+    if (_hiveBox == null) {
+      return null;
+    }
+    final value = _hiveBox?.get(key);
+    if (value is String && value.contains('{')) {
+      return _reviveValue(key, value) as TType?;
+    }
+    return value as TType?;
   }
 
   Future setPersistentValue<TType>(
@@ -391,55 +424,61 @@ abstract class LiteStateController<T> {
     TType? value,
   ) async {
     if (value == null) {
-      _persistentData.remove(key);
+      await _hiveBox?.delete(key);
     } else {
-      _persistentData[key] = value;
+      final encodedValue = _encodeValue(value);
+      _hiveBox?.put(key, encodedValue);
     }
-    await _updateLocalPreferences();
     rebuild();
   }
 
-  Future _updateLocalPreferences() async {
-    if (_sharedPreferences != null) {
-      try {
-        final data = jsonEncode(
-          _persistentData,
-          toEncodable: _encodeValue,
-        );
-        await _sharedPreferences!.setString(
-          _preferencesKey,
-          data,
-        );
-      } catch (e) {
-        if (kDebugMode) {
-          print(e);
-        }
-      }
-    }
-  }
-
-  String? _encodeValue(Object? nonEncodable) {
-    dynamic value;
-    if (nonEncodable is DateTime) {
-      return nonEncodable.toIso8601String();
-    } else if (nonEncodable is io.File) {
-      return nonEncodable.path;
-    }
+  Object? _encodeValue(Object? nonEncodable) {
     final typeName = nonEncodable.runtimeType.toString();
-    if (typeName.contains('<')) {
-      throw 'Encodable type must not be generic';
+    if (nonEncodable is DateTime) {
+      return _EncodedValueWrapper(
+        typeName: 'DateTime',
+        value: {
+          'date': nonEncodable.toIso8601String(),
+        },
+      )._toEncodedJson();
+    } else if (nonEncodable is io.File) {
+      return _EncodedValueWrapper(
+        typeName: "File",
+        value: {
+          'path': nonEncodable.path,
+        },
+      )._toEncodedJson();
+    } else if (nonEncodable is List) {
+      final list = nonEncodable.map((e) => _encodeValue(e)).toList();
+      return _EncodedValueWrapper(
+        typeName: 'List',
+        value: {
+          'list': list,
+        },
+      )._toEncodedJson();
+    } else if (nonEncodable is Map) {
+      final mapped = {};
+      for (var kv in nonEncodable.entries) {
+        mapped[kv.key] = _encodeValue(kv.value);
+      }
+      return _EncodedValueWrapper(
+        typeName: 'Map',
+        value: {
+          'map': mapped,
+        },
+      )._toEncodedJson();
     }
     if (_isPrimitiveType(typeName)) {
-      return value;
+      return nonEncodable;
     }
+
     if (nonEncodable is! LSJsonEncodable) {
       throw 'Your class must implement JsonEncodable before it can be converted to JSON';
     }
-    final wrapper = _EncodedValueWrapper(
+    return _EncodedValueWrapper(
       typeName: typeName,
       value: nonEncodable.encode(),
-    );
-    return wrapper._toEncodedJson();
+    )._toEncodedJson();
   }
 
   bool _isPrimitiveType(String typeName) {
@@ -470,14 +509,30 @@ abstract class LiteStateController<T> {
     if (map != null) {
       if (map['type'] == '_EncodedValueWrapper') {
         final typeName = map['typeName'];
-        if (_jsonDecoders[typeName] != null) {
+        final String innerValue = map['value'];
+        final Map mapFromBase64 = jsonDecode(
+          utf8.decode(
+            base64Decode(innerValue),
+          ),
+        ) as Map;
+        if (typeName == 'DateTime') {
+          return DateTime.tryParse(mapFromBase64['date'] ?? '');
+        } else if (typeName == 'File') {
+          return io.File(mapFromBase64['path']);
+        } else if (typeName == 'List') {
+          List list = mapFromBase64['list'];
+          final result = list.map((e) => _reviveValue(key, e)).toList();
+          return result;
+        } else if (typeName == 'Map') {
+          Map map = mapFromBase64['map'];
+          final revivedMap = {};
+          for (var kv in map.entries) {
+            final value = _reviveValue(kv.key, kv.value);
+            revivedMap[kv.key] = value;
+          }
+          return revivedMap;
+        } else if (_jsonDecoders[typeName] != null) {
           final Decoder decode = _jsonDecoders[typeName] as Decoder;
-          final String innerValue = map['value'];
-          final Map mapFromBase64 = jsonDecode(
-            utf8.decode(
-              base64Decode(innerValue),
-            ),
-          ) as Map;
           return decode(mapFromBase64);
         } else {
           if (kDebugMode) {
@@ -516,10 +571,14 @@ abstract class LiteStateController<T> {
     return runtimeType.toString();
   }
 
-  Future clearPersistentData() async {
-    if (_sharedPreferences != null) {
-      _persistentData.clear();
-      await _sharedPreferences?.remove(_preferencesKey);
+  Future clearPersistentData([
+    bool forceReBuild = false,
+  ]) async {
+    if (_hiveBox != null) {
+      await _hiveBox!.clear();
+      if (forceReBuild) {
+        rebuild();
+      }
     }
   }
 
@@ -533,16 +592,17 @@ abstract class LiteStateController<T> {
         stopwatch = Stopwatch()..start();
       }
     }
-    _sharedPreferences ??= await SharedPreferences.getInstance();
-    final string = _sharedPreferences!.getString(_preferencesKey);
-    if (string == null) {
-      _persistentData = <String, dynamic>{};
-    } else {
-      _persistentData = jsonDecode(
-        string,
-        reviver: _reviveValue,
-      )?.cast<String, dynamic>();
+    if (_hiveBox == null) {
+      final supportDir = await getApplicationSupportDirectory();
+      _hiveBox = await Hive.openBox(
+        _preferencesKey,
+        path: supportDir.path,
+        // encryptionCipher: HiveAesCipher(
+        //   Hive.generateSecureKey(),
+        // ),
+      );
     }
+
     if (measureStorageInitializationTime) {
       if (kDebugMode) {
         print(

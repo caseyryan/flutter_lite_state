@@ -26,10 +26,39 @@ class SingleUseControllerPage extends StatelessWidget {
                     fontSize: 50.0,
                   ),
                 ),
+                if (controller.date != null) Text(controller.date!),
                 Button(
                   text: 'Update Counter',
                   onPressed: () {
                     controller.counter++;
+                  },
+                ),
+                Button(
+                  text: 'Set Date',
+                  onPressed: () {
+                    controller.setDate();
+                  },
+                ),
+                Button(
+                  text: 'Save List',
+                  onPressed: () {
+                    controller.setList([
+                      'one',
+                      'two',
+                      'tree',
+                    ]);
+                  },
+                ),
+                Button(
+                  text: 'Save Map',
+                  onPressed: () {
+                    controller.saveMap();
+                  },
+                ),
+                Button(
+                  text: 'Clear',
+                  onPressed: () async {
+                    controller.clearPersistentData(true);
                   },
                 ),
               ],

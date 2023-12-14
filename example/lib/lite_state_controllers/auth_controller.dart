@@ -14,7 +14,7 @@ class AuthController extends LiteStateController<AuthController> {
   /// this will return AuthData only after
   /// in has been initialized
   AuthData? get authData {
-    return getPersistentValue<AuthData>('authData');
+    return getPersistentValue<AuthData>('authData') as AuthData;
   }
 
   set authData(AuthData? value) {
