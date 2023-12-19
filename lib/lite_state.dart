@@ -345,24 +345,25 @@ class _EncodedValueWrapper {
 abstract class LiteStateController<T> {
   LiteStateController({
     this.useLocalStorage = true,
-    this.measureStorageInitializationTime = false,
+    this.preserveLocalStorageOnControllerDispose = false,
   }) {
     _init();
   }
 
   static final Map<String, dynamic> _streamControllers = {};
 
+  /// [useLocalStorage] whether to use a local storage (based on `Hive` or not)
   final bool useLocalStorage;
+
+  /// [preserveLocalStorageOnControllerDispose] if true, the values you saved
+  /// using [setPersistentValue] will be preserved despite of the controller's lifecycle
+  final bool preserveLocalStorageOnControllerDispose;
 
   Box? _hiveBox;
 
   bool get isLocalStorageInitialized {
     return _hiveBox != null;
   }
-
-  /// Can be used for debugging purposes to find out if
-  /// your local storage takes too much time for initializations
-  final bool measureStorageInitializationTime;
 
   StreamController<T> get _streamController {
     final key = T.toString();
@@ -409,7 +410,7 @@ abstract class LiteStateController<T> {
   /// case you need to add json encoders / revivers so that
   /// jsonEncode / jsonDecode could understand how to work with your type
   TType? getPersistentValue<TType>(String key) {
-    if (_hiveBox == null) {
+    if (_hiveBox == null || !useLocalStorage) {
       return null;
     }
     final value = _hiveBox?.get(key);
@@ -423,6 +424,9 @@ abstract class LiteStateController<T> {
     String key,
     TType? value,
   ) async {
+    if (!useLocalStorage) {
+      return;
+    }
     if (value == null) {
       await _hiveBox?.delete(key);
     } else {
@@ -571,11 +575,26 @@ abstract class LiteStateController<T> {
     return runtimeType.toString();
   }
 
-  Future clearPersistentData([
+  /// [forceReBuild] if true, it will call `rebuild()` after
+  /// the data is cleared.
+  /// [forceClearLocalStorage] makes sense only if you set
+  /// `preserveLocalStorageOnControllerDispose` to true for your controller.
+  /// This flag will clear your local storage
+  Future clearPersistentData({
     bool forceReBuild = false,
-  ]) async {
+    bool forceClearLocalStorage = false,
+  }) async {
     if (_hiveBox != null) {
-      await _hiveBox!.clear();
+      if (preserveLocalStorageOnControllerDispose) {
+        if (forceClearLocalStorage) {
+          if (kDebugMode) {
+            print('YOU\'VE USED [forceClearLocalStorage] on $runtimeType');
+          }
+          await _hiveBox!.clear();
+        }
+      } else {
+        await _hiveBox!.clear();
+      }
       if (forceReBuild) {
         rebuild();
       }
@@ -586,12 +605,6 @@ abstract class LiteStateController<T> {
     if (!useLocalStorage) {
       return;
     }
-    Stopwatch? stopwatch;
-    if (measureStorageInitializationTime) {
-      if (kDebugMode) {
-        stopwatch = Stopwatch()..start();
-      }
-    }
     if (_hiveBox == null) {
       final supportDir = await getApplicationSupportDirectory();
       _hiveBox = await Hive.openBox(
@@ -601,14 +614,6 @@ abstract class LiteStateController<T> {
         //   Hive.generateSecureKey(),
         // ),
       );
-    }
-
-    if (measureStorageInitializationTime) {
-      if (kDebugMode) {
-        print(
-          '${_preferencesKey}_initLocalStorage() took: ${stopwatch?.elapsed.inMilliseconds} milliseconds',
-        );
-      }
     }
     onLocalStorageInitialized();
     rebuild();

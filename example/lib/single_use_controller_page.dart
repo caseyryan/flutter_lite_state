@@ -56,9 +56,17 @@ class SingleUseControllerPage extends StatelessWidget {
                   },
                 ),
                 Button(
+                  text: 'Save Bool',
+                  onPressed: () {
+                    controller.saveBool();
+                  },
+                ),
+                Button(
                   text: 'Clear',
                   onPressed: () async {
-                    controller.clearPersistentData(true);
+                    controller.clearPersistentData(
+                      forceReBuild: true,
+                    );
                   },
                 ),
               ],
