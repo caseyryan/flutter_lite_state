@@ -1,3 +1,7 @@
+## 2.5.0
+* Added `preserveLocalStorageOnControllerDispose` parameter to a controller. It allows 
+for storing persistent data despite of the controller's lifecycle
+If you still need to clear it's data for some reason, call `clearPersistentData(forceClearLocalStorage: true);` on the controller
 ## 2.4.8
 * Maps can also now be stored in `Hive` based storage
 ## 2.4.7

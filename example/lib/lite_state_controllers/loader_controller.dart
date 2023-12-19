@@ -4,7 +4,6 @@ class LoaderController extends LiteStateController<LoaderController> {
   LoaderController()
       : super(
           useLocalStorage: true,
-          measureStorageInitializationTime: true,
         );
 
   Future load1() async {

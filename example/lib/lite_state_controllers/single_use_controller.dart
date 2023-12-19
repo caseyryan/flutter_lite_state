@@ -49,6 +49,18 @@ class SingleUseController extends LiteStateController<SingleUseController> {
     }
   }
 
+  Future saveBool() async {
+    await setPersistentValue<bool>(
+      'someBool',
+      true,
+    );
+
+    final someBool = getPersistentValue('someBool');
+    if (kDebugMode) {
+      print(someBool);
+    }
+  }
+
   set counter(int value) {
     _counter = value;
     rebuild();
