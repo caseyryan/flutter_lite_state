@@ -28,6 +28,7 @@ class _MyAppState extends State<MyApp> {
       AuthController: () => AuthController(),
       LoaderController: () => LoaderController(),
     });
+
     super.initState();
   }
 

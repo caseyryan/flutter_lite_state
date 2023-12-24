@@ -1,3 +1,5 @@
+## 2.5.1
+* Fixed Hive initialization on web
 ## 2.5.0
 * Added `preserveLocalStorageOnControllerDispose` parameter to a controller. It allows 
 for storing persistent data despite of the controller's lifecycle

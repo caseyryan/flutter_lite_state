@@ -188,8 +188,7 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) ||
-      _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -221,8 +220,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController>
-    extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
   Widget? _child;
   bool _isReady = false;
 
@@ -606,10 +604,14 @@ abstract class LiteStateController<T> {
       return;
     }
     if (_hiveBox == null) {
-      final supportDir = await getApplicationSupportDirectory();
+      String? path;
+      if (!kIsWeb) {
+        final supportDir = await getApplicationSupportDirectory();
+        path = supportDir.path;
+      }
       _hiveBox = await Hive.openBox(
         _preferencesKey,
-        path: supportDir.path,
+        path: path,
         // encryptionCipher: HiveAesCipher(
         //   Hive.generateSecureKey(),
         // ),
