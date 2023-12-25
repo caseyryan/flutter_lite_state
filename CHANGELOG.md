@@ -1,3 +1,5 @@
+## 2.5.2
+* nonEncodable null check
 ## 2.5.1
 * Fixed Hive initialization on web
 ## 2.5.0

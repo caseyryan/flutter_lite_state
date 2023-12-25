@@ -188,8 +188,7 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) ||
-      _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -221,8 +220,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController>
-    extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
   Widget? _child;
   bool _isReady = false;
 
@@ -437,6 +435,9 @@ abstract class LiteStateController<T> {
   }
 
   Object? _encodeValue(Object? nonEncodable) {
+    if (nonEncodable == null) {
+      return null;
+    }
     final typeName = nonEncodable.runtimeType.toString();
     if (nonEncodable is DateTime) {
       return _EncodedValueWrapper(
@@ -502,12 +503,17 @@ abstract class LiteStateController<T> {
     Object? value,
   ) {
     Map? map;
-
+    if (value == null) {
+      return null;
+    }
     try {
-      map = jsonDecode(
-        value?.toString() ?? '{}',
-        reviver: _reviveValue,
-      );
+      final stringValue = value.toString();
+      if (stringValue.startsWith('{') || stringValue.startsWith('[')) {
+        map = jsonDecode(
+          stringValue,
+          reviver: _reviveValue,
+        );
+      }
       // ignore: empty_catches
     } catch (e) {}
     if (map != null) {
