@@ -363,7 +363,7 @@ abstract class LiteStateController<T> {
   List<TGenericType>? getPersistentList<TGenericType>(String key) {
     final value = getPersistentValue(key);
     if (value is List) {
-      return value.cast<TGenericType>();
+      return value.cast<TGenericType>().toList();
     }
     return null;
   }
