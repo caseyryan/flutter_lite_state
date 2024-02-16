@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:lite_state/lite_state.dart';
 
 import 'button.dart';
+import 'encrypted_controller_page.dart';
 import 'lite_state_controllers/auth_controller.dart';
+import 'separate_repo_page.dart';
 import 'single_use_controller_page.dart';
 
 class TestPage extends StatelessWidget {
@@ -92,6 +94,30 @@ class TestPage extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) {
                           return const SingleUseControllerPage();
+                        },
+                      ),
+                    );
+                  },
+                ),
+                Button(
+                  text: 'Open Encrypted Controller Page',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return const EncryptedControllerPage();
+                        },
+                      ),
+                    );
+                  },
+                ),
+                Button(
+                  text: 'Open Separate Repo Page',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return const SeparateRepoPage();
                         },
                       ),
                     );

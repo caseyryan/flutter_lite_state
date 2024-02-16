@@ -42,7 +42,7 @@ class SingleUseControllerPage extends StatelessWidget {
                 Button(
                   text: 'Save List',
                   onPressed: () {
-                    controller.setList([
+                    controller.saveList([
                       'one',
                       'two',
                       'tree',

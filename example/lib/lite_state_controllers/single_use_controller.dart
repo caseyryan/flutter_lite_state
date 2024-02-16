@@ -23,7 +23,7 @@ class SingleUseController extends LiteStateController<SingleUseController> {
     );
   }
 
-  Future setList(List value) async {
+  Future saveList(List value) async {
     await setPersistentValue(
       'list',
       value,
