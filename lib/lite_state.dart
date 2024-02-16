@@ -1,22 +1,18 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
+
+import 'lite_repo.dart';
+
+export 'lite_repo.dart';
 
 typedef ControllerInitializer = LiteStateController Function();
 
 Map<String, ControllerInitializer> _lazyControllerInitializers = {};
 Map<String, LiteStateController> _controllers = {};
-
-abstract class LSJsonEncodable {
-  Map encode();
-}
-
-Map<String, Decoder> _jsonDecoders = {};
 
 /// just calls a reset() method on all initialized controllers
 /// what this method should / should not do is up to you. Just write
@@ -46,48 +42,6 @@ void disposeControllerByType(Type controllerType) {
     controller.clearPersistentData();
     controller._disposeStream();
     _controllers.remove(typeKey);
-  }
-}
-
-typedef Decoder = Object? Function(Map);
-
-/// Initializes JSON decoders
-/// for custom types
-/// (if you ever need to store anything custom in shared preferences),
-/// so they can be easily
-/// restored from SharedPreferences.
-/// Call this method someplace at the beginning of
-/// your app, just before you initialize LiteState controllers
-/// so that controllers can have access to this data before
-/// they are initialized themselves.
-/// [Decoder] MUST be a STATIC function
-/// that creates instances of custom classes
-/// from a map
-/// e.g.
-/// static AuthData decode(Map map) {
-///   return AuthData(
-///     type: map['type'],
-///     token: map['token'],
-///     userName: map['userName'],
-///   );
-/// }
-/// this function converts a Map, stored in SharedPreferences
-/// into a user defined object. In this case a custom class
-/// called AuthData
-///
-/// IMPORTANT! Before decoding anything, you need to encode it first
-/// but to be able to be encoded to JSON
-/// your custom classes must implement LSJsonEncodable interface
-/// from LiteState package. See AuthData in an example project
-/// it simply makes sure that your class contains "encode()" method
-/// that will convert your instance to a Map
-void initJsonDecoders(Map<Type, Decoder> value) {
-  for (var v in value.entries) {
-    final key = v.key.toString();
-    if (key.contains('<')) {
-      throw 'Encodable type must not be generic. Actual type: $key';
-    }
-    _jsonDecoders[key] = v.value;
   }
 }
 
@@ -126,29 +80,6 @@ String _getNoControllerErrorText(String typeKey) {
         ''';
 }
 
-// String _getControllerExistsText(String typeKey) {
-//   return '''
-//           The controller for $typeKey is already initialized.
-//           Please use findController<T>() generic function
-//           to find a controller you need and do not initialize
-//           the controllers by calling their constructors directly
-//           use special global functions instead. E.g.
-//           initControllersLazy({
-//             AppBarController: () => AppBarController(),
-//             ThemeController: () => ThemeController(),
-//           });
-//           or
-//           initControllers({
-//             AppBarController: () => AppBarController(),
-//             ThemeController: () => ThemeController(),
-//           });
-//           if you need to initialized them all at ones.
-//           You can use both initControllersLazy() and initControllers()
-//           together. Don't worry, a controller can still be initialized
-//           only once
-//         ''';
-// }
-
 void _lazilyInitializeController(String typeKey) {
   if (_controllers.containsKey(typeKey)) {
     return;
@@ -156,9 +87,8 @@ void _lazilyInitializeController(String typeKey) {
   final initializer = _lazyControllerInitializers[typeKey];
   _controllers[typeKey] = initializer!();
   _controllers[typeKey]!.rebuild();
-  if (kDebugMode) {
-    print('LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
-  }
+  debugPrint(
+      'LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
 }
 
 void _addTemporaryController<T>(
@@ -318,39 +248,56 @@ class _LiteStateState<T extends LiteStateController>
   }
 }
 
-class _EncodedValueWrapper {
-  String typeName;
-  Map value;
-  _EncodedValueWrapper({
-    required this.typeName,
-    required this.value,
-  });
-
-  String _toEncodedJson() {
-    /// stores value as base64 string
-    /// even though it take more space it is also
-    /// a safer way to store some complex maps that may
-    /// fail to be stored as strings
-    final encodedData = base64Encode(
-      utf8.encode(jsonEncode(value)),
-    );
-    return jsonEncode({
-      'type': '_EncodedValueWrapper',
-      'typeName': typeName,
-      'value': encodedData,
-    });
-  }
-}
-
 abstract class LiteStateController<T> {
+  /// [encryptionPassword] If you set this, it will be used to
+  /// encrypt your local data store for this controller
+  /// It won't have any effect if you pass [liteRepo]
+  ///
+  /// [liteRepo] you can use a custom repository which might easily be shared
+  /// between different controllers.
+  /// This repo WILL NOT be destroyed with controller.
+  /// if you don't pass a [liteRepo] one will be created by default and will be
+  /// destroyed with the controller if the [preserveLocalStorageOnControllerDispose] is false
   LiteStateController({
     this.useLocalStorage = true,
     this.preserveLocalStorageOnControllerDispose = false,
+    String? encryptionPassword,
+    LiteRepo? liteRepo,
   }) {
-    _init();
+    _init(liteRepo, encryptionPassword);
+  }
+
+  /// This hack is necessary to give the type some time
+  /// to be initialized since you can't add anything by type
+  /// from the constructor
+  Future _init(
+    LiteRepo? liteRepo,
+    String? encryptionPassword,
+  ) async {
+    final typeKey = T.toString();
+    if (_controllers.containsKey(typeKey)) {
+      disposeControllerByType(T);
+    }
+    if (useLocalStorage) {
+      _providedRepo = liteRepo != null;
+      _liteRepo = liteRepo ??
+          LiteRepo(
+            encryptionPassword: encryptionPassword,
+            collectionName: _preferencesKey,
+            modelInitializer: {},
+          );
+    } else {
+      if (liteRepo != null) {
+        throw 'You have set `useLocalStorage` to false but passed `liteRepo`';
+      }
+    }
+
+    await _initLocalStorage();
   }
 
   static final Map<String, dynamic> _streamControllers = {};
+
+  LiteRepo? _liteRepo;
 
   /// [useLocalStorage] whether to use a local storage (based on `Hive` or not)
   final bool useLocalStorage;
@@ -358,11 +305,11 @@ abstract class LiteStateController<T> {
   /// [preserveLocalStorageOnControllerDispose] if true, the values you saved
   /// using [setPersistentValue] will be preserved despite of the controller's lifecycle
   final bool preserveLocalStorageOnControllerDispose;
-
-  Box? _hiveBox;
+  bool _providedRepo = false;
+  // Box? _hiveBox;
 
   bool get isLocalStorageInitialized {
-    return _hiveBox != null;
+    return _liteRepo?.isInitialized == true;
   }
 
   StreamController<T> get _streamController {
@@ -387,17 +334,7 @@ abstract class LiteStateController<T> {
   Stream<T> get _stream => _streamController.stream.asBroadcastStream();
 
   final Map<String, bool> _loaderFlags = {};
-
-  /// This hack is necessary to give the type some time
-  /// to be initialized since you can't add anything by type
-  /// from the constructor
-  Future _init() async {
-    final typeKey = T.toString();
-    if (_controllers.containsKey(typeKey)) {
-      disposeControllerByType(T);
-    }
-    await _initLocalStorage();
-  }
+  // HiveAesCipher? _hiveCipher;
 
   /// It's just a utility method in case you need to
   /// simulate some loading or just wait for something
@@ -409,15 +346,11 @@ abstract class LiteStateController<T> {
   /// You can use your own types here but in this
   /// case you need to add json encoders / revivers so that
   /// jsonEncode / jsonDecode could understand how to work with your type
-  TType? getPersistentValue<TType>(String key) {
-    if (_hiveBox == null || !useLocalStorage) {
+  dynamic getPersistentValue<TType>(String key) {
+    if (_liteRepo == null || !useLocalStorage) {
       return null;
     }
-    final value = _hiveBox?.get(key);
-    if (value is String && value.contains('{')) {
-      return _reviveValue(key, value) as TType?;
-    }
-    return value as TType?;
+    return _liteRepo?.get<TType>(key);
   }
 
   Future setPersistentValue<TType>(
@@ -427,156 +360,8 @@ abstract class LiteStateController<T> {
     if (!useLocalStorage) {
       return;
     }
-    if (value == null) {
-      await _hiveBox?.delete(key);
-    } else {
-      final encodedValue = _encodeValue(value);
-      _hiveBox?.put(key, encodedValue);
-    }
+    await _liteRepo?.set(key, value);
     rebuild();
-  }
-
-  Object? _encodeValue(Object? nonEncodable) {
-    if (nonEncodable == null) {
-      return null;
-    }
-    final typeName = nonEncodable.runtimeType.toString();
-    if (nonEncodable is DateTime) {
-      return _EncodedValueWrapper(
-        typeName: 'DateTime',
-        value: {
-          'date': nonEncodable.toIso8601String(),
-        },
-      )._toEncodedJson();
-    } else if (nonEncodable is io.File) {
-      return _EncodedValueWrapper(
-        typeName: "File",
-        value: {
-          'path': nonEncodable.path,
-        },
-      )._toEncodedJson();
-    } else if (nonEncodable is List) {
-      final list = nonEncodable.map((e) => _encodeValue(e)).toList();
-      return _EncodedValueWrapper(
-        typeName: 'List',
-        value: {
-          'list': list,
-        },
-      )._toEncodedJson();
-    } else if (nonEncodable is Map) {
-      final mapped = {};
-      for (var kv in nonEncodable.entries) {
-        mapped[kv.key] = _encodeValue(kv.value);
-      }
-      return _EncodedValueWrapper(
-        typeName: 'Map',
-        value: {
-          'map': mapped,
-        },
-      )._toEncodedJson();
-    }
-    if (_isPrimitiveType(typeName)) {
-      return nonEncodable;
-    }
-
-    if (nonEncodable is! LSJsonEncodable) {
-      throw 'Your class must implement JsonEncodable before it can be converted to JSON';
-    }
-    return _EncodedValueWrapper(
-      typeName: typeName,
-      value: nonEncodable.encode(),
-    )._toEncodedJson();
-  }
-
-  bool _isPrimitiveType(String typeName) {
-    switch (typeName) {
-      case 'bool':
-      case 'int':
-      case 'double':
-      case 'num':
-      case 'String':
-        return true;
-    }
-    return false;
-  }
-
-  Object? _reviveValue(
-    Object? key,
-    Object? value,
-  ) {
-    Map? map;
-    if (value == null) {
-      return null;
-    }
-    try {
-      final stringValue = value.toString();
-      if (stringValue.startsWith('{') || stringValue.startsWith('[')) {
-        map = jsonDecode(
-          stringValue,
-          reviver: _reviveValue,
-        );
-      }
-      // ignore: empty_catches
-    } catch (e) {}
-    if (map != null) {
-      if (map['type'] == '_EncodedValueWrapper') {
-        final typeName = map['typeName'];
-        final String innerValue = map['value'];
-        final Map mapFromBase64 = jsonDecode(
-          utf8.decode(
-            base64Decode(innerValue),
-          ),
-        ) as Map;
-        if (typeName == 'DateTime') {
-          return DateTime.tryParse(mapFromBase64['date'] ?? '');
-        } else if (typeName == 'File') {
-          return io.File(mapFromBase64['path']);
-        } else if (typeName == 'List') {
-          List list = mapFromBase64['list'];
-          final result = list.map((e) => _reviveValue(key, e)).toList();
-          return result;
-        } else if (typeName == 'Map') {
-          Map map = mapFromBase64['map'];
-          final revivedMap = {};
-          for (var kv in map.entries) {
-            final value = _reviveValue(kv.key, kv.value);
-            revivedMap[kv.key] = value;
-          }
-          return revivedMap;
-        } else if (_jsonDecoders[typeName] != null) {
-          final Decoder decode = _jsonDecoders[typeName] as Decoder;
-          return decode(mapFromBase64);
-        } else {
-          if (kDebugMode) {
-            print(
-              '''
-              No decoder found for $typeName.
-                To make your class encodable / decodable it must implement LSJsonEncodable interface 
-                e.g. 
-                class UserData implements LSJsonEncodable {
-                  
-                  /// comes from the abstract subclass (interface) 
-                  Map encode() {
-                    /// implement your own method to 
-                    return toMap();
-                  }
-
-                  /// add a static function that returns an instance
-                  static UserData decode(Map data) {
-                    /// use your way to decode an instance from map
-                    /// in this case I used a factory constructor but it doesn't 
-                    /// really matter.
-                    return UserData.fromMap(data);
-                  }
-                }
-              ''',
-            );
-          }
-          return null;
-        }
-      }
-    }
-    return value;
   }
 
   String get _preferencesKey {
@@ -592,16 +377,16 @@ abstract class LiteStateController<T> {
     bool forceReBuild = false,
     bool forceClearLocalStorage = false,
   }) async {
-    if (_hiveBox != null) {
-      if (preserveLocalStorageOnControllerDispose) {
+    if (_liteRepo != null) {
+      if (preserveLocalStorageOnControllerDispose && !_providedRepo) {
         if (forceClearLocalStorage) {
           if (kDebugMode) {
             print('YOU\'VE USED [forceClearLocalStorage] on $runtimeType');
           }
-          await _hiveBox!.clear();
+          await _liteRepo!.clear();
         }
       } else {
-        await _hiveBox!.clear();
+        await _liteRepo!.clear();
       }
       if (forceReBuild) {
         rebuild();
@@ -613,20 +398,7 @@ abstract class LiteStateController<T> {
     if (!useLocalStorage) {
       return;
     }
-    if (_hiveBox == null) {
-      String? path;
-      if (!kIsWeb) {
-        final supportDir = await getApplicationSupportDirectory();
-        path = supportDir.path;
-      }
-      _hiveBox = await Hive.openBox(
-        _preferencesKey,
-        path: path,
-        // encryptionCipher: HiveAesCipher(
-        //   Hive.generateSecureKey(),
-        // ),
-      );
-    }
+    await _liteRepo?.initialize();
     onLocalStorageInitialized();
     rebuild();
   }

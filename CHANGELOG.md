@@ -1,3 +1,6 @@
+## 3.0.0
+* Introduced LiteRepo. Now different controllers are able to use the same repository. See example project 
+* All controller storages can now be encrypted by a password. You can pass it via LiteStateController constructor or to a repository itself
 ## 2.5.2
 * nonEncodable null check
 ## 2.5.1

@@ -22,6 +22,11 @@ class AuthData implements LSJsonEncodable {
     };
   }
 
+  @override
+  String toString() {
+    return '[$runtimeType token: $token, userName: $userName]';
+  }
+
   static AuthData decode(Map map) {
     return AuthData(
       type: map['type'],
