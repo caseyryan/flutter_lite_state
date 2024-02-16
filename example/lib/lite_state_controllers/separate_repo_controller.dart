@@ -20,7 +20,7 @@ class SeparateRepoController
       MoneyData(currency: 'RUB', amount: 1500.0),
       MoneyData(currency: 'CNY', amount: 135.0),
     ];
-    await setPersistentValue<List>('money', money);
+    await setPersistentList<MoneyData>('money', money);
     final someMaps = [
       {'mapKey': 123}
     ];
@@ -31,7 +31,7 @@ class SeparateRepoController
   }
 
   Future reviveMoneyData() async {
-    final List? money = getPersistentValue<List>('money');
+    final money = getPersistentList<MoneyData>('money');
     debugPrint(money?.map((e) => e.toString()).join() ?? '');
 
     /// Just to demonstrate how to store arbitrary data without revivers and encoders

@@ -187,7 +187,7 @@ class LiteRepo {
     if (value is String && value.contains('{')) {
       return _reviveValue(key, value) as dynamic;
     }
-    return value as TType?;
+    return value;
   }
 
   Future _init() async {

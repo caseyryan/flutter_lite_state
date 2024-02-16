@@ -1,3 +1,4 @@
+import 'package:example/lite_state_controllers/money_data.dart';
 import 'package:example/separate_repo_page.dart';
 import 'package:flutter/material.dart';
 import 'package:lite_state/lite_state.dart';
@@ -71,11 +72,9 @@ class MoneyDataController extends LiteStateController<MoneyDataController> {
   void reset() {}
   @override
   void onLocalStorageInitialized() {
-    final listOfMoney = getPersistentValue<List>('money');
-    if (listOfMoney is List) {
-      _savedMoney = listOfMoney.map((e) => e.toString()).join('\n');
-      debugPrint(_savedMoney);
-      rebuild();
-    }
+    final listOfMoney = getPersistentList<MoneyData>('money') ?? [];
+    _savedMoney = listOfMoney.map((e) => e.toString()).join('\n');
+    debugPrint(_savedMoney);
+    rebuild();
   }
 }

@@ -353,6 +353,21 @@ abstract class LiteStateController<T> {
     return _liteRepo?.get<TType>(key);
   }
 
+  Future setPersistentList<TGenericType>(
+    String key,
+    List<TGenericType> values,
+  ) async {
+    await setPersistentValue(key, values);
+  }
+
+  List<TGenericType>? getPersistentList<TGenericType>(String key) {
+    final value = getPersistentValue(key);
+    if (value is List) {
+      return value.cast<TGenericType>();
+    }
+    return null;
+  }
+
   Future setPersistentValue<TType>(
     String key,
     TType? value,
