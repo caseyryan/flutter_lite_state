@@ -94,6 +94,22 @@ class LiteRepo {
     return _completer.future;
   }
 
+
+   Future setList<TGenericType>(
+    String key,
+    List<TGenericType> values,
+  ) async {
+    await set(key, values);
+  }
+
+  List<TGenericType>? getList<TGenericType>(String key) {
+    final value = get(key);
+    if (value is List) {
+      return value.cast<TGenericType>().toList();
+    }
+    return null;
+  }
+
   bool get isInitialized {
     return _completer.isCompleted;
   }
