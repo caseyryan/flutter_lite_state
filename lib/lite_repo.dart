@@ -94,8 +94,7 @@ class LiteRepo {
     return _completer.future;
   }
 
-
-   Future setList<TGenericType>(
+  Future setList<TGenericType>(
     String key,
     List<TGenericType> values,
   ) async {

@@ -87,7 +87,8 @@ void _lazilyInitializeController(String typeKey) {
   final initializer = _lazyControllerInitializers[typeKey];
   _controllers[typeKey] = initializer!();
   _controllers[typeKey]!.rebuild();
-  debugPrint('LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+  debugPrint(
+      'LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
 }
 
 void _addTemporaryController<T>(
@@ -117,7 +118,8 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) ||
+      _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -149,7 +151,8 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController>
+    extends State<LiteState<T>> {
   Widget? _child;
   bool _isReady = false;
 
@@ -295,7 +298,7 @@ abstract class LiteStateController<T> {
   static final Map<String, dynamic> _streamControllers = {};
 
   LiteRepo? _liteRepo;
-  
+
   LiteRepo? get repo {
     return _liteRepo;
   }
