@@ -1,3 +1,5 @@
+## 3.0.3
+* Added rebuild to `setPersistentList()`
 ## 3.0.2
 * Fix uncontrollable provided repo clearance
 ## 3.0.1
