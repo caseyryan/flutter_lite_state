@@ -1,3 +1,5 @@
+## 3.0.2
+* Fix uncontrollable provided repo clearance
 ## 3.0.1
 * added `repo` getter to a `LiteStateController`
 * added `getList` and `setList` methods to `LiteRepo`

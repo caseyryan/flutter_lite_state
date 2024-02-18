@@ -399,7 +399,7 @@ abstract class LiteStateController<T> {
     bool forceClearLocalStorage = false,
   }) async {
     if (_liteRepo != null) {
-      if (preserveLocalStorageOnControllerDispose && !_providedRepo) {
+      if (preserveLocalStorageOnControllerDispose) {
         if (forceClearLocalStorage) {
           if (kDebugMode) {
             print('YOU\'VE USED [forceClearLocalStorage] on $runtimeType');
@@ -407,7 +407,9 @@ abstract class LiteStateController<T> {
           await _liteRepo!.clear();
         }
       } else {
-        await _liteRepo!.clear();
+        if (!_providedRepo) {
+          await _liteRepo!.clear();
+        }
       }
       if (forceReBuild) {
         rebuild();
