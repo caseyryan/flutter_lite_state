@@ -6,8 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'lite_repo.dart';
+import 'on_postframe.dart';
 
 export 'lite_repo.dart';
+export 'on_postframe.dart';
 
 typedef ControllerInitializer = LiteStateController Function();
 
@@ -87,7 +89,8 @@ void _lazilyInitializeController(String typeKey) {
   final initializer = _lazyControllerInitializers[typeKey];
   _controllers[typeKey] = initializer!();
   _controllers[typeKey]!.rebuild();
-  debugPrint('LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+  debugPrint(
+      'LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
 }
 
 void _addTemporaryController<T>(
@@ -117,7 +120,8 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) ||
+      _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -149,7 +153,8 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController>
+    extends State<LiteState<T>> {
   Widget? _child;
   bool _isReady = false;
 
@@ -203,7 +208,9 @@ class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>>
           );
         }
         if (_child != null && widget.onReady != null) {
-          _tryCallOnReady();
+          onPostframe(() {
+            _tryCallOnReady();
+          });
         }
         return _child ?? const SizedBox.shrink();
       },

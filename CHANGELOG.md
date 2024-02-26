@@ -1,3 +1,5 @@
+## 3.1.0
+* `onReady` is now guaranteed to be called after frame
 ## 3.0.3
 * Added rebuild to `setPersistentList()`
 ## 3.0.2
