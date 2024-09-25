@@ -54,9 +54,7 @@ void initControllers(
     final typeKey = key.toString();
     if (!_controllers.containsKey(typeKey)) {
       _controllers[typeKey] = value.call();
-      if (kDebugMode) {
-        print('LiteState: INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
-      }
+      debugPrint('LiteState: INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
     }
   });
 }
@@ -89,8 +87,7 @@ void _lazilyInitializeController(String typeKey) {
   final initializer = _lazyControllerInitializers[typeKey];
   _controllers[typeKey] = initializer!();
   _controllers[typeKey]!.rebuild();
-  debugPrint(
-      'LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+  debugPrint('LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
 }
 
 void _addTemporaryController<T>(
@@ -120,8 +117,7 @@ T findController<T extends LiteStateController>() {
 
 bool _hasControllerInitializer<T extends LiteStateController>() {
   final typeKey = T.toString();
-  return _controllers.containsKey(typeKey) ||
-      _lazyControllerInitializers.containsKey(typeKey);
+  return _controllers.containsKey(typeKey) || _lazyControllerInitializers.containsKey(typeKey);
 }
 
 typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
@@ -133,6 +129,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   final LiteStateBuilder<T> builder;
   final LiteStateController<T>? controller;
   final ValueChanged<T>? onReady;
+  final bool isSliver;
 
   /// [builder] a function that will be called every time
   /// you call rebuild in your controller
@@ -146,6 +143,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
     required this.builder,
     this.controller,
     this.onReady,
+    this.isSliver = false,
     Key? key,
   }) : super(key: key);
 
@@ -153,8 +151,7 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   State<LiteState> createState() => _LiteStateState<T>();
 }
 
-class _LiteStateState<T extends LiteStateController>
-    extends State<LiteState<T>> {
+class _LiteStateState<T extends LiteStateController> extends State<LiteState<T>> {
   Widget? _child;
   bool _isReady = false;
 
@@ -198,6 +195,9 @@ class _LiteStateState<T extends LiteStateController>
       builder: (BuildContext c, AsyncSnapshot<T> snapshot) {
         if (_controller?.useLocalStorage == true) {
           if (!_controller!.isLocalStorageInitialized) {
+            if (widget.isSliver) {
+              return const SliverToBoxAdapter();
+            }
             return const SizedBox.shrink();
           }
         }
@@ -212,7 +212,7 @@ class _LiteStateState<T extends LiteStateController>
             _tryCallOnReady();
           });
         }
-        return _child ?? const SizedBox.shrink();
+        return _child ?? (widget.isSliver ? const SliverToBoxAdapter() : const SizedBox.shrink());
       },
     );
   }
