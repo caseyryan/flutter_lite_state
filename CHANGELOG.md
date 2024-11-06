@@ -1,3 +1,6 @@
+## 3.1.2
+* Add possibility to reset and dispose all controllers in one call
+just call `LiteState.resetAllControllers(dispose: true)`
 ## 3.1.1
 * Added isSliver parameter
 ## 3.1.0

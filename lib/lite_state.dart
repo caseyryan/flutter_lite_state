@@ -19,9 +19,19 @@ Map<String, LiteStateController> _controllers = {};
 /// just calls a reset() method on all initialized controllers
 /// what this method should / should not do is up to you. Just write
 /// your own implementation if you need it
-void resetAllControllers() {
+void resetAllControllers({
+  bool dispose = false,
+}) {
   for (var controller in _controllers.values) {
-    controller.reset();
+    if (dispose) {
+      controller.clearPersistentData();
+      controller._disposeStream();
+    } else {
+      controller.reset();
+    }
+  }
+  if (dispose) {
+    _controllers.clear();
   }
 }
 
