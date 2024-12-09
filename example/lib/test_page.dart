@@ -6,6 +6,7 @@ import 'package:lite_state/lite_state.dart';
 import 'button.dart';
 import 'encrypted_controller_page.dart';
 import 'lite_state_controllers/auth_controller.dart';
+import 'multi_controller_setup.dart';
 import 'separate_repo_page.dart';
 import 'single_use_controller_page.dart';
 
@@ -118,6 +119,18 @@ class TestPage extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) {
                           return const SeparateRepoPage();
+                        },
+                      ),
+                    );
+                  },
+                ),
+                Button(
+                  text: 'Open Multi Controller Setup',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return const MultiControllerSetup();
                         },
                       ),
                     );

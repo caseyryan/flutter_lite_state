@@ -11,6 +11,8 @@ import 'on_postframe.dart';
 export 'lite_repo.dart';
 export 'on_postframe.dart';
 
+part '_controller.dart';
+
 typedef ControllerInitializer = LiteStateController Function();
 
 Map<String, ControllerInitializer> _lazyControllerInitializers = {};
@@ -138,11 +140,6 @@ typedef LiteStateBuilder<T extends LiteStateController> = Widget Function(
 );
 
 class LiteState<T extends LiteStateController> extends StatefulWidget {
-  final LiteStateBuilder<T> builder;
-  final LiteStateController<T>? controller;
-  final ValueChanged<T>? onReady;
-  final bool isSliver;
-
   /// [builder] a function that will be called every time
   /// you call rebuild in your controller
   /// [controller] if you don't need a persistent controller
@@ -156,8 +153,29 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
     this.controller,
     this.onReady,
     this.isSliver = false,
+    this.useIsolatedController = false,
     Key? key,
-  }) : super(key: key);
+  })  : assert(
+          (useIsolatedController == true && controller != null) ||
+              useIsolatedController == false,
+          '`useIsolatedController` can be `true` only if a controller is provided',
+        ),
+        super(key: key);
+
+  final LiteStateBuilder<T> builder;
+  final LiteStateController<T>? controller;
+
+  /// [useIsolatedController] can be useful if you need to use the
+  /// same controller type for many widgets but the controller instances
+  /// must be different. In this case pass an instance of the controller and
+  /// set [useIsolatedController] to true. If it's set to true but a controller
+  /// is not provided, you will get an exception.
+  /// IMPORTANT: it it's set to true, then the controller is not available via
+  /// findController and cannot be disposed of manually. It's completely bound
+  /// to the instance of LiteState
+  final bool useIsolatedController;
+  final ValueChanged<T>? onReady;
+  final bool isSliver;
 
   @override
   State<LiteState> createState() => _LiteStateState<T>();
@@ -170,12 +188,18 @@ class _LiteStateState<T extends LiteStateController>
 
   @override
   void initState() {
-    if (widget.controller != null) {
-      if (_hasControllerInitializer<T>()) {
-        /// just to make sure the controller did not exist
-        disposeControllerByType(T);
+    /// this flag [true] will mean that
+    /// the controller instance is not added to the map
+    /// thus it can't be found by findController<T>()
+    /// and cannot (and must not) be disposed of manually
+    if (widget.useIsolatedController == false) {
+      if (widget.controller != null) {
+        if (_hasControllerInitializer<T>()) {
+          /// just to make sure the controller did not exist
+          disposeControllerByType(T);
+        }
+        _addTemporaryController(widget.controller!);
       }
-      _addTemporaryController(widget.controller!);
     }
     super.initState();
   }
@@ -188,7 +212,12 @@ class _LiteStateState<T extends LiteStateController>
   @override
   void dispose() {
     if (widget.controller != null) {
-      disposeControllerByType(T);
+      if (widget.useIsolatedController == false) {
+        disposeControllerByType(T);
+      } else {
+        widget.controller!.reset();
+        widget.controller!._disposeStream();
+      }
     }
     super.dispose();
   }
@@ -203,7 +232,10 @@ class _LiteStateState<T extends LiteStateController>
 
   Widget _streamBuilder() {
     return StreamBuilder<T>(
-      stream: _controller!._stream,
+      key: widget.controller != null ? ValueKey(widget.controller) : null,
+      stream: _controller!._getStream(
+        useIsolatedController: widget.useIsolatedController,
+      ),
       initialData: _controller as T,
       builder: (BuildContext c, AsyncSnapshot<T> snapshot) {
         if (_controller?.useLocalStorage == true) {
@@ -254,7 +286,10 @@ class _LiteStateState<T extends LiteStateController>
 
   bool get _hasStream {
     _ensureControllerInitialized();
-    return _controller?._stream != null;
+    return _controller?._getStream(
+          useIsolatedController: widget.useIsolatedController,
+        ) !=
+        null;
   }
 
   @override
@@ -265,237 +300,5 @@ class _LiteStateState<T extends LiteStateController>
     return Container(
       color: Colors.transparent,
     );
-  }
-}
-
-abstract class LiteStateController<T> {
-  /// [encryptionPassword] If you set this, it will be used to
-  /// encrypt your local data store for this controller
-  /// It won't have any effect if you pass [liteRepo]
-  ///
-  /// [liteRepo] you can use a custom repository which might easily be shared
-  /// between different controllers.
-  /// This repo WILL NOT be destroyed with controller.
-  /// if you don't pass a [liteRepo] one will be created by default and will be
-  /// destroyed with the controller if the [preserveLocalStorageOnControllerDispose] is false
-  LiteStateController({
-    this.useLocalStorage = true,
-    this.preserveLocalStorageOnControllerDispose = false,
-    String? encryptionPassword,
-    LiteRepo? liteRepo,
-  }) {
-    _init(liteRepo, encryptionPassword);
-  }
-
-  /// This hack is necessary to give the type some time
-  /// to be initialized since you can't add anything by type
-  /// from the constructor
-  Future _init(
-    LiteRepo? liteRepo,
-    String? encryptionPassword,
-  ) async {
-    final typeKey = T.toString();
-    if (_controllers.containsKey(typeKey)) {
-      disposeControllerByType(T);
-    }
-    if (useLocalStorage) {
-      _providedRepo = liteRepo != null;
-      _liteRepo = liteRepo ??
-          LiteRepo(
-            encryptionPassword: encryptionPassword,
-            collectionName: _preferencesKey,
-            modelInitializer: {},
-          );
-    } else {
-      if (liteRepo != null) {
-        throw 'You have set `useLocalStorage` to false but passed `liteRepo`';
-      }
-    }
-
-    await _initLocalStorage();
-  }
-
-  static final Map<String, dynamic> _streamControllers = {};
-
-  LiteRepo? _liteRepo;
-
-  LiteRepo? get repo {
-    return _liteRepo;
-  }
-
-  /// [useLocalStorage] whether to use a local storage (based on `Hive` or not)
-  final bool useLocalStorage;
-
-  /// [preserveLocalStorageOnControllerDispose] if true, the values you saved
-  /// using [setPersistentValue] will be preserved despite of the controller's lifecycle
-  final bool preserveLocalStorageOnControllerDispose;
-  bool _providedRepo = false;
-  // Box? _hiveBox;
-
-  bool get isLocalStorageInitialized {
-    return _liteRepo?.isInitialized == true;
-  }
-
-  StreamController<T> get _streamController {
-    final key = T.toString();
-    if (!_streamControllers.containsKey(key)) {
-      _streamControllers[key] = StreamController<T>.broadcast();
-      _streamController.sink.add(this as T);
-    }
-    return _streamControllers[key];
-  }
-
-  void _disposeStream() {
-    final key = T.toString();
-    if (_streamControllers.containsKey(key)) {
-      _streamControllers[key].close();
-      _streamControllers.remove(key);
-    }
-  }
-
-  void reset();
-
-  Stream<T> get _stream => _streamController.stream.asBroadcastStream();
-
-  final Map<String, bool> _loaderFlags = {};
-  // HiveAesCipher? _hiveCipher;
-
-  /// It's just a utility method in case you need to
-  /// simulate some loading or just wait for something
-  Future delay(int millis) async {
-    await Future.delayed(Duration(milliseconds: millis));
-  }
-
-  /// Retrieves a persistent data stored in SharedPreferences
-  /// You can use your own types here but in this
-  /// case you need to add json encoders / revivers so that
-  /// jsonEncode / jsonDecode could understand how to work with your type
-  dynamic getPersistentValue<TType>(String key) {
-    if (_liteRepo == null || !useLocalStorage) {
-      return null;
-    }
-    return _liteRepo?.get<TType>(key);
-  }
-
-  Future setPersistentList<TGenericType>(
-    String key,
-    List<TGenericType> values,
-  ) async {
-    if (!useLocalStorage) {
-      return;
-    }
-    _liteRepo?.setList<TGenericType>(key, values);
-    rebuild();
-  }
-
-  List<TGenericType>? getPersistentList<TGenericType>(String key) {
-    if (!useLocalStorage) {
-      return null;
-    }
-    return _liteRepo?.getList<TGenericType>(key);
-  }
-
-  Future setPersistentValue<TType>(
-    String key,
-    TType? value,
-  ) async {
-    if (!useLocalStorage) {
-      return;
-    }
-    await _liteRepo?.set(key, value);
-    rebuild();
-  }
-
-  String get _preferencesKey {
-    return runtimeType.toString();
-  }
-
-  /// [forceReBuild] if true, it will call `rebuild()` after
-  /// the data is cleared.
-  /// [forceClearLocalStorage] makes sense only if you set
-  /// `preserveLocalStorageOnControllerDispose` to true for your controller.
-  /// This flag will clear your local storage
-  Future clearPersistentData({
-    bool forceReBuild = false,
-    bool forceClearLocalStorage = false,
-  }) async {
-    if (_liteRepo != null) {
-      if (preserveLocalStorageOnControllerDispose) {
-        if (forceClearLocalStorage) {
-          if (kDebugMode) {
-            print('YOU\'VE USED [forceClearLocalStorage] on $runtimeType');
-          }
-          await _liteRepo!.clear();
-        }
-      } else {
-        if (!_providedRepo) {
-          await _liteRepo!.clear();
-        }
-      }
-      if (forceReBuild) {
-        rebuild();
-      }
-    }
-  }
-
-  Future _initLocalStorage() async {
-    if (!useLocalStorage) {
-      return;
-    }
-    await _liteRepo?.initialize();
-    onLocalStorageInitialized();
-    rebuild();
-  }
-
-  /// called when the local storage has
-  /// loaded all stored values. Override it if you
-  /// need to get some values from local storage
-  void onLocalStorageInitialized() {}
-
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  void startLoading() {
-    _isLoading = true;
-    rebuild();
-  }
-
-  void stopLoading() {
-    _isLoading = false;
-    rebuild();
-  }
-
-  bool getIsLoading(String? loaderName) {
-    if (loaderName == null) {
-      return _isLoading;
-    }
-    return _loaderFlags[loaderName] == true;
-  }
-
-  void setIsLoading(
-    String? loaderName,
-    bool value,
-  ) {
-    if (loaderName != null) {
-      _loaderFlags[loaderName] = value;
-    } else {
-      _isLoading = value;
-    }
-    rebuild();
-  }
-
-  /// just sets all loader flags to false
-  /// but doesn't actually stop any loaders
-  void stopAllLoadings() {
-    _isLoading = false;
-    for (var kv in _loaderFlags.entries) {
-      _loaderFlags[kv.key] = false;
-    }
-    rebuild();
-  }
-
-  @mustCallSuper
-  void rebuild() {
-    _streamController.sink.add(this as T);
   }
 }

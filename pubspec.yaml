@@ -1,10 +1,10 @@
 name: lite_state
 description: A simple state management machine for Flutter.
-version: 3.1.2
+version: 3.2.0
 homepage: https://github.com/caseyryan/flutter_lite_state
 
 environment:
-  sdk: ">=2.17.3 <3.0.0"
+  sdk: ">=2.17.3 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
