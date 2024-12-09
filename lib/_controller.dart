@@ -248,10 +248,16 @@ abstract class LiteStateController<T> {
   @mustCallSuper
   void rebuild() {
     if (_isolatedStreamController != null) {
-      _isolatedStreamController!.sink.add(this as T);
+      if (!_isolatedStreamController!.isClosed) {
+        _isolatedStreamController!.sink.add(this as T);
+      }
+    } else {
+      final c = _getStreamController(
+        useIsolatedController: false,
+      );
+      if (c.isClosed == false) {
+        c.sink.add(this as T);
+      }
     }
-    _getStreamController(
-      useIsolatedController: false,
-    ).sink.add(this as T);
   }
 }
