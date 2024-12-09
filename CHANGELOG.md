@@ -1,3 +1,5 @@
+## 3.2.1
+* Hotfix. Added check if controller is not closed before sending any events to it
 ## 3.2.0
 * Added `useIsolatedController` parameter to `LiteState` which allows to use the same controller type for many widgets but the controller instances must be different. In this case pass an instance of the controller and set `useIsolatedController` to true.
 See the example in `MultiControllerSetup` class in the example project
