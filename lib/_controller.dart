@@ -237,9 +237,14 @@ abstract class LiteStateController<T> {
 
   /// just sets all loader flags to false
   /// but doesn't actually stop any loaders
-  void stopAllLoadings() {
+  /// [except] if, for some reason you want to
+  /// keep some loaders running, just pass their names here
+  void stopAllLoadings([List<String>? except]) {
     _isLoading = false;
     for (var kv in _loaderFlags.entries) {
+      if (except != null && except.contains(kv.key)) {
+        continue;
+      }
       _loaderFlags[kv.key] = false;
     }
     rebuild();

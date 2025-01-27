@@ -1,3 +1,5 @@
+## 3.2.2
+* Added `stopAllLoadings` except parameter which allows to prevent some loaders from stopping
 ## 3.2.1
 * Hotfix. Added check if controller is not closed before sending any events to it
 ## 3.2.0
