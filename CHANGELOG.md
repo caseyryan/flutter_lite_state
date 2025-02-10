@@ -1,4 +1,4 @@
-## 3.2.3
+## 3.2.4
 * Changed 
 ```dart 
 typedef ModelDecoderFunction = LSJsonEncodable Function(Map json);

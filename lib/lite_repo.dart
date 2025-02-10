@@ -272,7 +272,7 @@ class LiteRepo {
         } else if (_jsonDecoders[typeName] != null) {
           final ModelDecoderFunction decode =
               _jsonDecoders[typeName] as ModelDecoderFunction;
-          return decode(mapFromBase64);
+          return decode(mapFromBase64.cast<String, dynamic>());
         } else {
           if (kDebugMode) {
             print(
