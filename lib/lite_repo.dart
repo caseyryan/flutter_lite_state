@@ -335,4 +335,5 @@ abstract class LSJsonEncodable {
   Map encode();
 }
 
-typedef ModelDecoderFunction = LSJsonEncodable Function(Map json);
+typedef ModelDecoderFunction = LSJsonEncodable Function(
+    Map<String, dynamic> json);

@@ -1,3 +1,14 @@
+## 3.2.3
+* Changed 
+```dart 
+typedef ModelDecoderFunction = LSJsonEncodable Function(Map json);
+
+///to
+
+typedef ModelDecoderFunction = LSJsonEncodable Function(Map<String, dynamic> json);
+```
+
+To be compatible with `json_serializable`
 ## 3.2.2
 * Added `stopAllLoadings` except parameter which allows to prevent some loaders from stopping
 ## 3.2.1
