@@ -1,3 +1,9 @@
+## 4.0.0
+- Named rebuilds. Now you can give each LiteState instance a name (if you want) and the just call `rebuild(''builderName)` by this name, and it will rebuild only the particular builder. 
+if you don't pass a name, all builders for this controllers that are currently in the widget tree will be rebuilt. This is very important feature it you want to use the same controller for 
+many builders at once but you don't want to rebuild all of them
+- Updated flutter version to 3.29.2
+
 ## 3.2.4
 * Changed 
 ```dart 

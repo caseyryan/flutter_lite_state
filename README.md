@@ -406,3 +406,97 @@ class AuthController extends LiteStateController<AuthController> {
 ```
 
 See example project for a complete source 
+
+
+# Conditional rebuilds
+
+If you want to rebuild only a particular builder, you can give this name to a LiteState instance amd pass the same name to the `rebuild('someBuilderName')` method. This will trigger only a particular builder. If you don't pass a name, all builders for this controllers that are currently in the widget tree will be rebuilt.
+
+Here's the complete example. As you can see, it uses a few instances of LiteState with the same controller on the same page. But the instances have different names. And when you press a corresponding button, you will see only one print with the related information, which means that only that builder was triggered. 
+
+```dart
+import 'package:example/button.dart';
+import 'package:flutter/material.dart';
+import 'package:lite_state/lite_state.dart';
+
+class NamedBuildersPage extends StatefulWidget {
+  const NamedBuildersPage({super.key});
+
+  @override
+  State<NamedBuildersPage> createState() => _NamedBuildersPageState();
+}
+
+class _NamedBuildersPageState extends State<NamedBuildersPage> {
+  final NamedBuilderController _controller = NamedBuilderController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Named Builders Page'),
+      ),
+      body: Center(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(
+              height: 100.0,
+            ),
+
+            /// Press one of two buttons and see how only a particular print will work
+            /// While the builders use the same instance of controller
+            LiteState<NamedBuilderController>(
+              controller: _controller,
+              builderName: 'text1',
+              builder: (BuildContext c, NamedBuilderController controller) {
+                debugPrint('REBUILD TEXT 1');
+                return const Text('Text1');
+              },
+            ),
+            const SizedBox(
+              height: 20.0,
+            ),
+            LiteState<NamedBuilderController>(
+              controller: _controller,
+              builderName: 'text2',
+              builder: (BuildContext c, NamedBuilderController controller) {
+                debugPrint('REBUILD TEXT 2');
+                return const Text('Text2');
+              },
+            ),
+            const SizedBox(
+              height: 20.0,
+            ),
+            Button(
+              text: 'Rebuild Text1',
+              onPressed: () {
+                _controller.rebuild('text1');
+              },
+            ),
+            Button(
+              text: 'Rebuild Text2',
+              onPressed: () {
+                _controller.rebuild('text2');
+              },
+            ),
+            Button(
+              text: 'Unnamed Rebuild',
+              onPressed: () {
+                _controller.rebuild();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NamedBuilderController extends LiteStateController<NamedBuilderController> {
+  @override
+  void reset() {}
+  @override
+  void onLocalStorageInitialized() {}
+}
+
+```

@@ -148,11 +148,16 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
   /// [onReady] this callback is guaranteed to be called after
   /// [LiteState] has completed initialization and local storage
   /// already can be used
+  /// [builderName] allows to build only a specific builder
+  /// for example, you have a view widgets wrapped in LiteState in the same page
+  /// if you pass a name to a lite state builder, you can then use it in this method
+  /// to rebuild a particular one. This might be very useful with complex UIs
   const LiteState({
     required this.builder,
     this.controller,
     this.onReady,
     this.isSliver = false,
+    this.builderName,
     this.useIsolatedController = false,
     Key? key,
   })  : assert(
@@ -164,6 +169,12 @@ class LiteState<T extends LiteStateController> extends StatefulWidget {
 
   final LiteStateBuilder<T> builder;
   final LiteStateController<T>? controller;
+
+  /// [builderName] allows to build only a specific builder
+  /// for example, you have a view widgets wrapped in LiteState in the same page
+  /// if you pass a name to a lite state builder, you can then use it in this method
+  /// to rebuild a particular one. This might be very useful with complex UIs.
+  final String? builderName;
 
   /// [useIsolatedController] can be useful if you need to use the
   /// same controller type for many widgets but the controller instances
@@ -231,11 +242,21 @@ class _LiteStateState<T extends LiteStateController>
   }
 
   Widget _streamBuilder() {
+    var stream = _controller!
+        ._getStream(
+      useIsolatedController: widget.useIsolatedController,
+    )
+        .where((_StreamPayload<T> c) {
+      if (widget.builderName != null) {
+        if (c.builderName != null) {
+          return c.builderName == widget.builderName;
+        }
+      }
+      return true;
+    }).map((e) => e.data);
     return StreamBuilder<T>(
       key: widget.controller != null ? ValueKey(widget.controller) : null,
-      stream: _controller!._getStream(
-        useIsolatedController: widget.useIsolatedController,
-      ),
+      stream: stream,
       initialData: _controller as T,
       builder: (BuildContext c, AsyncSnapshot<T> snapshot) {
         if (_controller?.useLocalStorage == true) {

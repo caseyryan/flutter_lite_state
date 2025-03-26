@@ -1,4 +1,5 @@
 import 'package:example/loader_page.dart';
+import 'package:example/named_builders_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lite_state/lite_state.dart';
@@ -87,6 +88,18 @@ class TestPage extends StatelessWidget {
                 ),
                 const SizedBox(
                   height: 50,
+                ),
+                Button(
+                  text: 'Open Named Builders Page',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return const NamedBuildersPage();
+                        },
+                      ),
+                    );
+                  },
                 ),
                 Button(
                   text: 'Open Single Use Controller Page',

@@ -68,20 +68,21 @@ abstract class LiteStateController<T> {
     return _liteRepo?.isInitialized == true;
   }
 
-  StreamController<T>? _isolatedStreamController;
+  StreamController<_StreamPayload<T>>? _isolatedStreamController;
 
-  StreamController<T> _getStreamController({
+  StreamController<_StreamPayload<T>> _getStreamController({
     required bool useIsolatedController,
   }) {
     if (useIsolatedController) {
-      _isolatedStreamController ??= StreamController<T>.broadcast();
+      _isolatedStreamController ??=
+          StreamController<_StreamPayload<T>>.broadcast();
       return _isolatedStreamController!;
     }
 
     final key = T.toString();
     if (!_streamControllers.containsKey(key)) {
-      _streamControllers[key] = StreamController<T>.broadcast();
-      _streamControllers[key].sink.add(this as T);
+      _streamControllers[key] = StreamController<_StreamPayload<T>>.broadcast();
+      _streamControllers[key].sink.add(_StreamPayload(this as T, null));
     }
     return _streamControllers[key];
   }
@@ -100,7 +101,7 @@ abstract class LiteStateController<T> {
 
   void reset();
 
-  Stream<T> _getStream({
+  Stream<_StreamPayload<T>> _getStream({
     bool useIsolatedController = false,
   }) {
     return _getStreamController(
@@ -250,19 +251,36 @@ abstract class LiteStateController<T> {
     rebuild();
   }
 
+  /// [builderName] allows to build only a specific builder
+  /// for example, you have a view widgets wrapped in LiteState in the same page
+  /// if you pass a name to a lite state builder, you can then use it in this method
+  /// to rebuild a particular one. This might be very useful with complex UIs
   @mustCallSuper
-  void rebuild() {
+  void rebuild([
+    String? builderName,
+  ]) {
     if (_isolatedStreamController != null) {
       if (!_isolatedStreamController!.isClosed) {
-        _isolatedStreamController!.sink.add(this as T);
+        _isolatedStreamController!.sink
+            .add(_StreamPayload(this as T, builderName));
       }
     } else {
-      final c = _getStreamController(
+      final streamController = _getStreamController(
         useIsolatedController: false,
       );
-      if (c.isClosed == false) {
-        c.sink.add(this as T);
+      if (streamController.isClosed == false) {
+        streamController.sink.add(_StreamPayload(this as T, builderName));
       }
     }
   }
+}
+
+class _StreamPayload<T> {
+  final T data;
+  final String? builderName;
+
+  _StreamPayload(
+    this.data,
+    this.builderName,
+  );
 }
