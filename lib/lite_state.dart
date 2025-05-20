@@ -253,7 +253,7 @@ class _LiteStateState<T extends LiteStateController>
         }
       }
       return true;
-    }).map((e) => e.data);
+    }).map((e) => e.controller);
     return StreamBuilder<T>(
       key: widget.controller != null ? ValueKey(widget.controller) : null,
       stream: stream,

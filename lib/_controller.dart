@@ -149,13 +149,17 @@ abstract class LiteStateController<T> {
 
   Future setPersistentValue<TType>(
     String key,
-    TType? value,
-  ) async {
+    TType? value, {
+    bool mustRebuild = true,
+    String? builderName,
+  }) async {
     if (!useLocalStorage) {
       return;
     }
     await _liteRepo?.set(key, value);
-    rebuild();
+    if (mustRebuild) {
+      rebuild(builderName);
+    }
   }
 
   String get _preferencesKey {
@@ -170,6 +174,7 @@ abstract class LiteStateController<T> {
   Future clearPersistentData({
     bool forceReBuild = false,
     bool forceClearLocalStorage = false,
+    String? builderName,
   }) async {
     if (_liteRepo != null) {
       if (preserveLocalStorageOnControllerDispose) {
@@ -185,7 +190,7 @@ abstract class LiteStateController<T> {
         }
       }
       if (forceReBuild) {
-        rebuild();
+        rebuild(builderName);
       }
     }
   }
@@ -226,14 +231,15 @@ abstract class LiteStateController<T> {
 
   void setIsLoading(
     String? loaderName,
-    bool value,
-  ) {
+    bool value, {
+    String? builderName,
+  }) {
     if (loaderName != null) {
       _loaderFlags[loaderName] = value;
     } else {
       _isLoading = value;
     }
-    rebuild();
+    rebuild(builderName);
   }
 
   /// just sets all loader flags to false
@@ -276,11 +282,11 @@ abstract class LiteStateController<T> {
 }
 
 class _StreamPayload<T> {
-  final T data;
+  final T controller;
   final String? builderName;
 
   _StreamPayload(
-    this.data,
+    this.controller,
     this.builderName,
   );
 }

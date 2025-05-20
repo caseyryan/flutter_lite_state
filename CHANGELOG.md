@@ -1,3 +1,6 @@
+## 4.1.0
+- setPersistentValue now has a `mustRebuild` parameter (true) by default. Sometimes it's necessary
+to set a few values and only then rebuild. This param can handle it
 ## 4.0.0
 - Named rebuilds. Now you can give each LiteState instance a name (if you want) and the just call `rebuild(''builderName)` by this name, and it will rebuild only the particular builder. 
 if you don't pass a name, all builders for this controllers that are currently in the widget tree will be rebuilt. This is very important feature it you want to use the same controller for 
@@ -75,7 +78,7 @@ when the controller has initialized it's local storage and `LiteState` has compl
 * Fixed not closed broadcast stream for a single use controller
 ## 2.2.0
 * Breaking change. Corrected a typo.
-Renamed onLocalStorageInitialied to onLocalStorageInitialized. 
+Renamed onLocalStorageInitialized. 
 ## 2.1.0
 * Added a single use controllers
 ## 2.0.2
