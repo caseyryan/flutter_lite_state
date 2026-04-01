@@ -1,3 +1,5 @@
+## 4.1.1
+- Remove debug prints from release
 ## 4.1.0
 - setPersistentValue now has a `mustRebuild` parameter (true) by default. Sometimes it's necessary
 to set a few values and only then rebuild. This param can handle it

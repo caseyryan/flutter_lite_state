@@ -66,7 +66,10 @@ void initControllers(
     final typeKey = key.toString();
     if (!_controllers.containsKey(typeKey)) {
       _controllers[typeKey] = value.call();
-      debugPrint('LiteState: INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+      if (kDebugMode) {
+        debugPrint(
+            'LiteState: INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+      }
     }
   });
 }
@@ -99,8 +102,10 @@ void _lazilyInitializeController(String typeKey) {
   final initializer = _lazyControllerInitializers[typeKey];
   _controllers[typeKey] = initializer!();
   _controllers[typeKey]!.rebuild();
-  debugPrint(
-      'LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+  if (kDebugMode) {
+    debugPrint(
+        'LiteState: LAZILY INITIALIZED CONTROLLER: ${_controllers[typeKey]}');
+  }
 }
 
 void _addTemporaryController<T>(
