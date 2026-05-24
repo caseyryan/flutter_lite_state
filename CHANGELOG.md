@@ -1,3 +1,5 @@
+## 4.1.2
+- Fix deserialization problems in lite repo
 ## 4.1.1
 - Remove debug prints from release
 ## 4.1.0
