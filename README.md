@@ -164,7 +164,7 @@ conflict with each other. In this case the setup is almost the same as the above
 
 ```dart
 import 'package:example/button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 import 'lite_state_controllers/controller_for_multi_controller_setup.dart';
@@ -416,7 +416,7 @@ Here's the complete example. As you can see, it uses a few instances of LiteStat
 
 ```dart
 import 'package:example/button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 class NamedBuildersPage extends StatefulWidget {

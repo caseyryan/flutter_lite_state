@@ -1,27 +1,31 @@
 name: lite_state
-description: A simple state management machine for Flutter.
-version: 4.1.2
+description: Lightweight Flutter state management with selective rebuilds, controller lifecycle, persistent Hive CE storage, and optional encryption.
+version: 5.0.0
 homepage: https://github.com/caseyryan/flutter_lite_state
+repository: https://github.com/caseyryan/flutter_lite_state
+issue_tracker: https://github.com/caseyryan/flutter_lite_state/issues
+
+topics:
+  - state-management
+  - flutter
+  - persistence
 
 environment:
-  sdk: ">=2.17.3 <4.0.0"
-  flutter: ">=1.17.0"
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  collection: ^1.19.1
-  hive: ^2.2.3
+  hive_ce: ^2.23.3
   path_provider: ^2.1.5
   crypto: ^3.0.6
+  material_ui: ^1.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
-
-dependency_overrides:
-  win32: ^5.12.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

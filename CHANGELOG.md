@@ -1,3 +1,11 @@
+## 5.0.0
+- Updated the development SDK to Flutter 3.50.0 and Dart 3.14.0.
+- Migrated from Hive v2 to Hive CE with Flutter Web WASM support.
+- Migrated Material imports to the standalone `material_ui` package.
+- Updated the example web bootstrap for current Flutter web builds.
+- Improved nested value serialization and deserialization safety.
+- Raised the minimum SDK constraints to Dart 3.13.0 and Flutter 3.47.0.
+
 ## 4.1.2
 - Fix deserialization problems in lite repo
 ## 4.1.1

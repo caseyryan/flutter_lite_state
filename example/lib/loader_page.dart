@@ -1,7 +1,7 @@
 import 'package:example/lite_state_controllers/auth_controller.dart';
 import 'package:example/lite_state_controllers/loader_controller.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 import 'button.dart';

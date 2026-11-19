@@ -1,5 +1,5 @@
 import 'package:example/button.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 import 'lite_state_controllers/single_use_controller.dart';

@@ -2,7 +2,7 @@ import 'package:example/button.dart';
 import 'package:example/lite_state_controllers/money_data.dart';
 import 'package:example/lite_state_controllers/separate_repo_controller.dart';
 import 'package:example/money_data_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 class MoneyRepo extends LiteRepo {

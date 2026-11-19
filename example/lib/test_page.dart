@@ -1,7 +1,7 @@
 import 'package:example/loader_page.dart';
 import 'package:example/named_builders_page.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 import 'button.dart';

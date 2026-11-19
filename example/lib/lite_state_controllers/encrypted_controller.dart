@@ -1,5 +1,5 @@
 import 'package:example/lite_state_controllers/auth_data.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 EncryptedController get encryptedController {

@@ -1,7 +1,7 @@
 import 'package:example/button.dart';
 import 'package:example/lite_state_controllers/auth_data.dart';
 import 'package:example/lite_state_controllers/encrypted_controller.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:lite_state/lite_state.dart';
 
 class AuthRepo extends LiteRepo {

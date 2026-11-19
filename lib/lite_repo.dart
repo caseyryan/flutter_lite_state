@@ -6,7 +6,7 @@ import 'dart:io' as io;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Initializes JSON decoders for custom types so they can be easily
@@ -244,8 +244,7 @@ class LiteRepo {
         } catch (e, st) {
           // FIX: log the error instead of silently swallowing it
           if (kDebugMode) {
-            print(
-                'LiteRepo._reviveValue: failed to parse JSON for key "$key": $e\n$st');
+            print('LiteRepo._reviveValue: failed to parse JSON for key "$key": $e\n$st');
           }
           return value; // return raw value rather than crashing
         }
@@ -271,8 +270,7 @@ class LiteRepo {
     final rawValue = topMap['value'];
     if (typeName == null || rawValue == null) {
       if (kDebugMode) {
-        print(
-            'LiteRepo._reviveValue: malformed wrapper for key "$key": $topMap');
+        print('LiteRepo._reviveValue: malformed wrapper for key "$key": $topMap');
       }
       return null;
     }
@@ -317,7 +315,8 @@ class LiteRepo {
         final map = innerMap['map'];
         if (map is! Map) return null;
         return {
-          for (final kv in map.entries) kv.key: _reviveValue(kv.key, kv.value),
+          for (final kv in map.entries)
+            kv.key: _reviveValue(kv.key, kv.value),
         };
 
       default:
@@ -378,10 +377,10 @@ class _EncodedValueWrapper {
   }
 }
 
-// ---------------------------------------------------------------------------
 
 abstract class LSJsonEncodable {
   Map encode();
 }
 
-typedef ModelDecoderFunction = LSJsonEncodable Function(Map json);
+typedef ModelDecoderFunction = LSJsonEncodable Function(
+    Map<String, dynamic> json);
